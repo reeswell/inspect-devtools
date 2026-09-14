@@ -1,8 +1,11 @@
 {
   "name": "@inspect-devtools/client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browser client runtime for Inspect Devtools.",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
+  "homepage": "https://github.com/reeswell/inspect-devtools#readme",
+  "bugs": { "url": "https://github.com/reeswell/inspect-devtools/issues" },
   "keywords": ["vite", "devtools", "inspector", "source-location"],
   "engines": { "node": ">=18" },
   "type": "module",
