@@ -1,0 +1,2 @@
+const items = [{ actor: 'Mina Chen', action: 'merged the search filters', time: '8m ago' }, { actor: 'Ari Singh', action: 'updated the release notes', time: '26m ago' }, { actor: 'Build bot', action: 'published preview #184', time: '1h ago' }]
+export const ActivityFeed = () => <ol className="activity-feed">{items.map(item => <li key={item.actor} className="activity-item"><span className="activity-dot" aria-hidden="true" /><div><strong>{item.actor}</strong> {item.action}<time>{item.time}</time></div></li>)}</ol>

@@ -1,0 +1,22 @@
+{
+  "name": "@inspect-devtools/playground-vue",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 127.0.0.1 --port 5178",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@inspect-devtools/vite-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.10",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.1.5"
+  }
+}

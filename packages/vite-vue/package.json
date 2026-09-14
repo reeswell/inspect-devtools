@@ -1,0 +1,35 @@
+{
+  "name": "@inspect-devtools/vite-vue",
+  "version": "0.1.0",
+  "description": "Vite source inspector for Vue applications.",
+  "license": "MIT",
+  "keywords": ["vite", "vue", "devtools", "inspector", "source-location"],
+  "engines": { "node": ">=18" },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@inspect-devtools/client": "workspace:*",
+    "@inspect-devtools/core": "workspace:*",
+    "vite-plugin-vue-inspector": "^6.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.10",
+    "vitest": "^3.2.4"
+  }
+}

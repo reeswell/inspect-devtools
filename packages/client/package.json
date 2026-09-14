@@ -1,0 +1,36 @@
+{
+  "name": "@inspect-devtools/client",
+  "version": "0.1.0",
+  "description": "Browser client runtime for Inspect Devtools.",
+  "license": "MIT",
+  "keywords": ["vite", "devtools", "inspector", "source-location"],
+  "engines": { "node": ">=18" },
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    "./entry": {
+      "types": "./dist/entry.d.ts",
+      "import": "./dist/entry.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "sideEffects": ["./dist/style.css"],
+  "scripts": {
+    "build": "vite build && vue-tsc -p tsconfig.json --emitDeclarationOnly",
+    "dev": "vite --host 127.0.0.1",
+    "test": "vitest run",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@inspect-devtools/core": "workspace:*",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.10",
+    "vue-tsc": "^3.1.5"
+  }
+}

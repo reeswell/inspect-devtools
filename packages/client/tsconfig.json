@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "exclude": ["src/**/*.test.ts"],
+  "compilerOptions": {
+    "jsx": "preserve",
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["vite/client"]
+  }
+}
