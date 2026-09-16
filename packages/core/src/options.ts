@@ -2,4 +2,5 @@ import type { InspectDevtoolsOptions, ResolvedInspectDevtoolsOptions } from './t
 
 export const resolveInspectDevtoolsOptions = (options: InspectDevtoolsOptions = {}): ResolvedInspectDevtoolsOptions => ({
   openInEditor: options.openInEditor,
+  copyFormat: options.copyFormat ?? 'codex',
 })

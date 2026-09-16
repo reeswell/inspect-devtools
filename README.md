@@ -2,9 +2,9 @@
 
 [中文文档](./README.zh-CN.md)
 
-Inspect Devtools is a Vite development plugin for locating the source behind a rendered React or Vue element. Select an element in the browser and the tool copies its source location and opens that file in your editor.
+Inspect Devtools is a Vite development plugin for locating the source behind a rendered React or Vue element. Select an element in the browser and the tool copies a source-file reference and opens that file in your editor.
 
-It is intended for quick local debugging and for handing an exact `file:line:column` reference to a teammate, issue, or coding agent.
+It is intended for quick local debugging and for handing a source-file reference to a teammate, issue, or coding agent.
 
 ## Requirements
 
@@ -65,13 +65,39 @@ plugins: [
 
 The same option is available on `inspectDevtoolsVue`.
 
+### Copy format
+
+Copied source references support two formats. Pass `copyFormat` to set the project default.
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyFormat: 'codex' }),
+]
+```
+
+| `copyFormat` | Example output | Intended for |
+| --- | --- | --- |
+| `'codex'` (default) | `[App.vue](/absolute/path/to/App.vue)` | Codex and other Markdown-aware tools |
+| `'cursor'` | `@playgrounds/react/src/components/App.vue` (relative to the repository root; falls back to `@/absolute/path` outside it) | Cursor and Claude Code |
+
+Claude Code file mentions use the same `@path` shape as Cursor, so the `cursor` format covers both editors.
+
+All formats normalize Windows paths to forward slashes and omit line and column numbers; precise `line:column` navigation remains available to the editor-opening action.
+
+The Vite option is the project default for everyone. The panel also offers a **Copy format** selector (Codex, Cursor / Claude Code) whose choice is stored per project in the browser's `localStorage` as a personal override. The panel selection takes precedence over the Vite default and applies immediately to automatic copying and the panel's **Copy** button; **Reset to default** clears the override. If `localStorage` is unavailable, the selection stays in memory for the session and copying keeps working. Starting Inspect or selecting an element never opens the panel automatically.
+
+The same option is available on `inspectDevtoolsVue`.
+
 ## Workflow
 
 1. Start the Vite dev server.
 2. Press `Alt+Shift+I` or click **Inspect** in the bottom dock.
-3. Hover an element to preview its source label, then click the element.
-4. When source metadata is available, selecting automatically copies the complete `file:line:column` location and opens that file in the configured editor.
+3. Hover an element to preview its source label, then click the element. The panel remains closed unless you open it explicitly.
+4. When source metadata is available, selecting automatically copies a source-file reference in the active copy format and opens that file at its exact line and column in the configured editor.
 5. Use the panel's **Copy** or **Open** buttons to repeat either action independently.
+
+Copy produces a reference such as `[App.vue](/absolute/path/to/App.vue)` in the default Codex format. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation.
 
 The panel includes the nearest component name, source path, line, column, and a generated CSS selector. The displayed File value uses a compact relative path where possible; its tooltip contains the full path.
 

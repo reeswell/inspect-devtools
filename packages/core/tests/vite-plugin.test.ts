@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { INSPECT_DEVTOOLS_CLIENT_ID, RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID } from '../src/protocol'
 import { createInspectDevtoolsPlugin } from '../src/vite-plugin'
@@ -34,5 +37,44 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('import "/packages/client/dist/style.css"')
     expect(code).toContain('mountInspectDevtools')
     expect(code).toContain('"framework":"react"')
+    expect(code).toContain('"copyFormat":"codex"')
+    expect(code).toContain('"projectRoot":"/project"')
+  })
+
+  it.each(['codex', 'cursor'] as const)('passes the configured %s copy format to the client', async (copyFormat) => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'vue',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { copyFormat },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain(`"copyFormat":"${copyFormat}"`)
+  })
+
+  it('resolves the client project root to the repository root of a monorepo package', async () => {
+    const repoRoot = await mkdtemp(join(tmpdir(), 'inspect-devtools-repo-'))
+    const appRoot = join(repoRoot, 'playgrounds', 'react')
+    await mkdir(join(repoRoot, '.git'))
+    await mkdir(appRoot, { recursive: true })
+
+    try {
+      const plugin = createInspectDevtoolsPlugin({
+        framework: 'react',
+        clientEntry: '/packages/client/dist/entry.js',
+        clientStyle: '/packages/client/dist/style.css',
+      })
+
+      getHook(plugin.configResolved)({ base: '/', root: appRoot })
+
+      const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+      expect(code).toContain(`"projectRoot":${JSON.stringify(repoRoot)}`)
+    }
+    finally {
+      await rm(repoRoot, { recursive: true, force: true })
+    }
   })
 })

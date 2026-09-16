@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ClientInspectDevtoolsOptions } from '@inspect-devtools/core'
+import type { ClientInspectDevtoolsOptions, CopyFormat } from '@inspect-devtools/core'
 import { nextTick, shallowRef, useTemplateRef } from 'vue'
 import SelectionPanel from './components/SelectionPanel.vue'
 import { useInspector } from './composables/useInspector'
@@ -7,6 +7,11 @@ import { useInspector } from './composables/useInspector'
 const props = defineProps<{
   options: ClientInspectDevtoolsOptions
 }>()
+
+const COPY_FORMAT_OPTIONS: { value: CopyFormat, label: string }[] = [
+  { value: 'codex', label: 'Codex' },
+  { value: 'cursor', label: 'Cursor / Claude Code' },
+]
 
 const isOpen = shallowRef(false)
 const panelButton = useTemplateRef<HTMLButtonElement>('panelButton')
@@ -17,10 +22,12 @@ const togglePanel = async () => {
   if (isOpen.value) panelHeading.value?.focus()
   else panelButton.value?.focus()
 }
-const inspector = useInspector(props.options, { onInspectStart: () => { isOpen.value = true }, onTogglePanel: togglePanel })
+const inspector = useInspector(props.options, { onTogglePanel: togglePanel })
 const {
   isInspecting,
+  copyFormat,
   feedback,
+  isCopyFormatOverridden,
   isOpening,
   labelStyle,
   lastError,
@@ -28,7 +35,9 @@ const {
   openActiveSelectionInEditor,
   openSelectionInEditor,
   overlayStyle,
+  resetCopyFormat,
   selection,
+  setCopyFormat,
   sourceLabel,
   startInspecting,
   stopInspecting,
@@ -98,6 +107,40 @@ const {
       <p v-if="lastError" class="panel-error" role="alert">{{ lastError }}</p>
 
       <main class="panel-main panel-main-inspect">
+        <section class="surface copy-format-panel">
+          <div class="section-heading">
+            <h2>Copy format</h2>
+            <div class="section-actions">
+              <button
+                class="secondary-button"
+                type="button"
+                :disabled="!isCopyFormatOverridden"
+                title="Restore the project default copy format"
+                @click="resetCopyFormat"
+              >
+                Reset to default
+              </button>
+            </div>
+          </div>
+          <div class="copy-format-options" role="radiogroup" aria-label="Copy format">
+            <label
+              v-for="option in COPY_FORMAT_OPTIONS"
+              :key="option.value"
+              class="copy-format-option"
+            >
+              <input
+                type="radio"
+                name="inspect-devtools-copy-format"
+                :value="option.value"
+                :checked="copyFormat === option.value"
+                @change="setCopyFormat(option.value)"
+              >
+              <span>{{ option.label }}</span>
+            </label>
+          </div>
+          <p class="copy-format-hint">Applies to this browser only. The Vite `copyFormat` option sets the project default.</p>
+        </section>
+
         <SelectionPanel
           :is-opening="isOpening"
           :selection="selection"

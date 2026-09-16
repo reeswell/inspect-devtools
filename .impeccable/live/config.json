@@ -1,9 +1,0 @@
-{
-  "files": [
-    "playgrounds/react/index.html",
-    "playgrounds/vue/index.html"
-  ],
-  "insertBefore": "</body>",
-  "commentSyntax": "html",
-  "cspChecked": true
-}

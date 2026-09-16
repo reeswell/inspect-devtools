@@ -2,9 +2,9 @@
 
 [English](./README.md)
 
-Inspect Devtools 是一个 Vite 开发期插件，用于从浏览器中定位 React 或 Vue 渲染元素对应的源码。选中元素后，工具会复制源码位置，并在编辑器中打开对应文件。
+Inspect Devtools 是一个 Vite 开发期插件，用于从浏览器中定位 React 或 Vue 渲染元素对应的源码。选中元素后，工具会复制源码文件引用，并在编辑器中打开对应文件。
 
-它适合本地调试，也适合把精确的 `file:line:column` 位置交给同事、写入 issue，或粘贴给编码助手。
+它适合本地调试，也适合把源码文件引用交给同事、写入 issue，或粘贴给编码助手。
 
 ## 环境要求
 
@@ -65,13 +65,39 @@ plugins: [
 
 `inspectDevtoolsVue` 同样支持该选项。
 
+### 复制格式
+
+复制的源码引用支持两种格式。通过 `copyFormat` 设置项目默认格式。
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyFormat: 'codex' }),
+]
+```
+
+| `copyFormat` | 输出示例 | 适用工具 |
+| --- | --- | --- |
+| `'codex'`（默认） | `[App.vue](/绝对路径/App.vue)` | Codex 及其他支持 Markdown 的工具 |
+| `'cursor'` | `@playgrounds/react/src/components/App.vue`（相对仓库根目录；仓库外文件回退为 `@/绝对路径`） | Cursor、Claude Code |
+
+Claude Code 的文件引用与 Cursor 同为 `@路径` 形式，因此 `cursor` 格式同时适用于两者。
+
+所有格式都会将 Windows 路径统一为正斜杠，且不包含行列号；精确的 `行:列` 定位仍保留给编辑器打开动作。
+
+Vite 配置是面向所有人的项目默认值。面板中还提供 **Copy format** 选择器（Codex、Cursor / Claude Code），选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器的个人覆盖。面板选择优先于 Vite 默认值，并立即作用于自动复制和面板 **Copy** 按钮；**Reset to default** 可清除覆盖、恢复项目默认。当 `localStorage` 不可用时，选择仅保留在本次会话内存中，复制功能不受影响。启动 Inspect 或选中元素都不会自动打开面板。
+
+`inspectDevtoolsVue` 同样支持该选项。
+
 ## 使用流程
 
 1. 启动 Vite 开发服务器。
 2. 按 `Alt+Shift+I`，或点击底部 dock 中的 **Inspect**。
-3. 悬停可预览源码标签；点击目标元素完成选中。
-4. 当元素存在可用源码信息时，选中会自动复制完整 `file:line:column`，并在配置的编辑器中打开对应位置。
+3. 悬停可预览源码标签；点击目标元素完成选中。面板保持关闭，除非主动通过 Panel 按钮或快捷键打开。
+4. 当元素存在可用源码信息时，选中会按当前复制格式自动复制源码文件引用，并在配置的编辑器中精确打开对应行列。
 5. 使用面板中的 **Copy** 或 **Open**，可以单独重复其中一个动作。
+
+Copy 默认生成如 `[App.vue](/绝对路径/App.vue)` 的 Codex 引用格式，不附带行列信息；行列仅供编辑器打开时精确跳转使用。
 
 面板显示最近组件名、源码路径、行、列和生成的 CSS selector。File 默认显示更紧凑的相对路径；悬停可查看完整路径。
 
