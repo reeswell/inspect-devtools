@@ -38,7 +38,22 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('mountInspectDevtools')
     expect(code).toContain('"framework":"react"')
     expect(code).toContain('"copyFormat":"codex"')
+    expect(code).toContain('"theme":"light"')
     expect(code).toContain('"projectRoot":"/project"')
+  })
+
+  it('passes the configured theme to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { theme: 'dark' },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"theme":"dark"')
   })
 
   it.each(['codex', 'cursor'] as const)('passes the configured %s copy format to the client', async (copyFormat) => {

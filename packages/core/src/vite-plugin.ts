@@ -54,6 +54,7 @@ export const createInspectDevtoolsPlugin = ({ framework, clientEntry, clientStyl
         const clientOptions: ClientInspectDevtoolsOptions = {
           framework,
           copyFormat: resolvedOptions.copyFormat,
+          theme: resolvedOptions.theme,
           projectRoot,
           endpoints: clientEndpoints(config.base || '/'),
         }
