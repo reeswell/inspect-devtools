@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ClientInspectDevtoolsOptions, CopyFormat, InspectDevtoolsTheme } from '@inspect-devtools/core'
+import type { ClientInspectDevtoolsOptions, InspectDevtoolsTheme } from '@inspect-devtools/core'
 import { nextTick, shallowRef, useTemplateRef } from 'vue'
 import { loadPersistedTheme, persistTheme } from './composables/theme'
 import { useInspector } from './composables/useInspector'
@@ -7,11 +7,6 @@ import { useInspector } from './composables/useInspector'
 const props = defineProps<{
   options: ClientInspectDevtoolsOptions
 }>()
-
-const COPY_FORMAT_OPTIONS: { value: CopyFormat, label: string }[] = [
-  { value: 'codex', label: 'Codex' },
-  { value: 'cursor', label: 'Cursor / Claude Code' },
-]
 
 const isOpen = shallowRef(false)
 const panelButton = useTemplateRef<HTMLButtonElement>('panelButton')
@@ -32,24 +27,17 @@ const toggleTheme = () => {
 const inspector = useInspector(props.options, { onTogglePanel: togglePanel })
 const {
   isInspecting,
-  copyFormat,
-  defaultCopyFormat,
   feedback,
-  isCopyFormatOverridden,
   isOpening,
   labelStyle,
   lastError,
   openActiveSelectionInEditor,
   overlayStyle,
-  resetCopyFormat,
   selection,
-  setCopyFormat,
   sourceLabel,
   startInspecting,
   stopInspecting,
 } = inspector
-
-const copyFormatLabel = (value: CopyFormat) => COPY_FORMAT_OPTIONS.find(option => option.value === value)?.label ?? value
 
 </script>
 
@@ -142,46 +130,6 @@ const copyFormatLabel = (value: CopyFormat) => COPY_FORMAT_OPTIONS.find(option =
       </div>
       <p v-if="feedback" class="panel-feedback" aria-live="polite">{{ feedback }}</p>
       <p v-if="lastError" class="panel-error" role="alert">{{ lastError }}</p>
-
-      <main class="panel-main panel-main-inspect">
-        <section class="surface copy-format-panel">
-          <div class="section-heading">
-            <h2>Copy format</h2>
-            <button
-              v-if="isCopyFormatOverridden"
-              class="ghost-button"
-              type="button"
-              :aria-label="`Reset to project default (${copyFormatLabel(defaultCopyFormat)})`"
-              :title="`Reset to project default (${copyFormatLabel(defaultCopyFormat)})`"
-              @click="resetCopyFormat"
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M2.8 6.7A5.4 5.4 0 1 1 2.6 10" />
-                <path d="M2.5 3.6v3.2h3.2" />
-              </svg>
-            </button>
-          </div>
-          <div class="segmented" role="radiogroup" aria-label="Copy format">
-            <label
-              v-for="option in COPY_FORMAT_OPTIONS"
-              :key="option.value"
-              class="segment"
-              :data-active="copyFormat === option.value"
-            >
-              <input
-                class="segment-input"
-                type="radio"
-                name="inspect-devtools-copy-format"
-                :value="option.value"
-                :checked="copyFormat === option.value"
-                @change="setCopyFormat(option.value)"
-              >
-              <span>{{ option.label }}</span>
-            </label>
-          </div>
-          <p class="copy-format-hint">This browser only · Project default: {{ copyFormatLabel(defaultCopyFormat) }}</p>
-        </section>
-      </main>
     </aside>
   </div>
 </template>

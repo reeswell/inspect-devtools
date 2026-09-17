@@ -6,6 +6,8 @@ Inspect Devtools is a Vite development plugin for locating the source behind a r
 
 It is intended for quick local debugging and for handing a source-file reference to a teammate, issue, or coding agent.
 
+![Select an element to copy its `@` mention and open the source in your editor](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/inspect.gif)
+
 ## Requirements
 
 - Vite `6`, `7`, or `8`
@@ -65,30 +67,6 @@ plugins: [
 
 The same option is available on `inspectDevtoolsVue`.
 
-### Copy format
-
-Copied source references support two formats. Pass `copyFormat` to set the project default.
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ copyFormat: 'codex' }),
-]
-```
-
-| `copyFormat` | Example output | Intended for |
-| --- | --- | --- |
-| `'codex'` (default) | `[App.vue](/absolute/path/to/App.vue)` | Codex and other Markdown-aware tools |
-| `'cursor'` | `@playgrounds/react/src/components/App.vue` (relative to the repository root; falls back to `@/absolute/path` outside it) | Cursor and Claude Code |
-
-Claude Code file mentions use the same `@path` shape as Cursor, so the `cursor` format covers both editors.
-
-All formats normalize Windows paths to forward slashes and omit line and column numbers; precise `line:column` navigation remains available to the editor-opening action.
-
-The Vite option is the project default for everyone. The panel also offers a **Copy format** selector (Codex, Cursor / Claude Code) whose choice is stored per project in the browser's `localStorage` as a personal override. The panel selection takes precedence over the Vite default and applies immediately to automatic copying; **Reset to default** clears the override. If `localStorage` is unavailable, the selection stays in memory for the session and copying keeps working. Starting Inspect or selecting an element never opens the panel automatically.
-
-The same option is available on `inspectDevtoolsVue`.
-
 ### Theme
 
 The dock and panel use a light theme by default. Pass `theme` to make the dark theme the project default.
@@ -102,6 +80,9 @@ plugins: [
 
 The panel header also offers a theme toggle; its choice is stored per project in the browser's `localStorage` as a personal override of the Vite default.
 
+![Panel in the light theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-light.png#gh-light-mode-only)
+![Panel in the dark theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-dark.png#gh-dark-mode-only)
+
 The same option is available on `inspectDevtoolsVue`.
 
 ## Workflow
@@ -109,11 +90,11 @@ The same option is available on `inspectDevtoolsVue`.
 1. Start the Vite dev server.
 2. Press `Alt+Shift+I` or click the crosshair button in the bottom dock.
 3. Hover an element to preview its source label, then click the element. The panel remains closed unless you open it explicitly.
-4. When source metadata is available, selecting automatically copies a source-file reference in the active copy format and opens that file at its exact line and column in the configured editor.
+4. When source metadata is available, selecting automatically copies a reference to the source file and opens that file at its exact line and column in the configured editor.
 
-Copy produces a reference such as `[App.vue](/absolute/path/to/App.vue)` in the default Codex format. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation.
+Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. Starting Inspect or selecting an element never opens the panel automatically.
 
-The panel hosts per-browser preferences (copy format and theme); the status pill next to the Inspect toggle shows whether an element is selected.
+The panel hosts the per-browser theme preference; the status pill next to the Inspect toggle shows whether an element is selected.
 
 ## Keyboard shortcuts
 

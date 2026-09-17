@@ -14,4 +14,4 @@ import { inspectDevtoolsVue } from '@inspect-devtools/vite-vue'
 export default defineConfig({ plugins: [vue(), ...inspectDevtoolsVue()] })
 ```
 
-Press `Alt+Shift+I`, click an element, then Inspect Devtools copies a `[filename](/absolute/path)` source reference (Codex format by default; the `cursor` format for Cursor and Claude Code is also available via the `copyFormat` option or the panel) and opens it at the precise `file:line:column` location in your editor. The panel stays closed unless opened explicitly. See the repository README for all shortcuts, options, and limitations.
+Press `Alt+Shift+I`, click an element, then Inspect Devtools copies an `@relative/path` source reference (understood by Cursor and Claude Code) and opens it at the precise `file:line:column` location in your editor. The panel stays closed unless opened explicitly. See the repository README for all shortcuts, options, and limitations.

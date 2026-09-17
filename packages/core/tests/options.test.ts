@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { resolveInspectDevtoolsOptions } from '../src/options'
 
 describe('resolveInspectDevtoolsOptions', () => {
-  it('defaults to the codex copy format and light theme', () => {
+  it('defaults to the light theme', () => {
     const options = resolveInspectDevtoolsOptions()
 
-    expect(options.copyFormat).toBe('codex')
     expect(options.theme).toBe('light')
   })
 
@@ -15,8 +14,7 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(options.openInEditor).toBe('code')
   })
 
-  it('resolves configured copy formats and themes', () => {
-    expect(resolveInspectDevtoolsOptions({ copyFormat: 'cursor' }).copyFormat).toBe('cursor')
+  it('resolves the configured theme', () => {
     expect(resolveInspectDevtoolsOptions({ theme: 'dark' }).theme).toBe('dark')
   })
 })

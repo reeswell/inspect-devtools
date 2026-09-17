@@ -37,7 +37,6 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('import "/packages/client/dist/style.css"')
     expect(code).toContain('mountInspectDevtools')
     expect(code).toContain('"framework":"react"')
-    expect(code).toContain('"copyFormat":"codex"')
     expect(code).toContain('"theme":"light"')
     expect(code).toContain('"projectRoot":"/project"')
   })
@@ -56,19 +55,6 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('"theme":"dark"')
   })
 
-  it.each(['codex', 'cursor'] as const)('passes the configured %s copy format to the client', async (copyFormat) => {
-    const plugin = createInspectDevtoolsPlugin({
-      framework: 'vue',
-      clientEntry: '/packages/client/dist/entry.js',
-      clientStyle: '/packages/client/dist/style.css',
-      options: { copyFormat },
-    })
-
-    getHook(plugin.configResolved)({ base: '/', root: '/project' })
-
-    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
-    expect(code).toContain(`"copyFormat":"${copyFormat}"`)
-  })
 
   it('resolves the client project root to the repository root of a monorepo package', async () => {
     const repoRoot = await mkdtemp(join(tmpdir(), 'inspect-devtools-repo-'))

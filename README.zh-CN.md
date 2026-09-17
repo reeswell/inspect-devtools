@@ -6,6 +6,8 @@ Inspect Devtools 是一个 Vite 开发期插件，用于从浏览器中定位 Re
 
 它适合本地调试，也适合把源码文件引用交给同事、写入 issue，或粘贴给编码助手。
 
+![选中元素即复制 @ 引用，并在编辑器中打开源码](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/inspect.gif)
+
 ## 环境要求
 
 - Vite `6`、`7` 或 `8`
@@ -102,6 +104,9 @@ plugins: [
 
 面板头部也提供主题切换按钮，选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器对 Vite 默认值的个人覆盖。
 
+![浅色主题下的面板](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-light.png#gh-light-mode-only)
+![深色主题下的面板](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-dark.png#gh-dark-mode-only)
+
 `inspectDevtoolsVue` 同样支持该选项。
 
 ## 使用流程
@@ -109,11 +114,11 @@ plugins: [
 1. 启动 Vite 开发服务器。
 2. 按 `Alt+Shift+I`，或点击底部 dock 中的准星按钮。
 3. 悬停可预览源码标签；点击目标元素完成选中。面板保持关闭，除非主动通过 Panel 按钮或快捷键打开。
-4. 当元素存在可用源码信息时，选中会按当前复制格式自动复制源码文件引用，并在配置的编辑器中精确打开对应行列。
+4. 当元素存在可用源码信息时，选中会自动复制源码文件引用，并在配置的编辑器中精确打开对应行列。
 
-Copy 默认生成如 `[App.vue](/绝对路径/App.vue)` 的 Codex 引用格式，不附带行列信息；行列仅供编辑器打开时精确跳转使用。
+Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。复制不附带行列信息；行列仅供编辑器打开时精确跳转使用。启动 Inspect 或选中元素都不会自动打开面板。
 
-面板承载当前浏览器的个人设置（复制格式与主题）；工具栏状态标签会显示当前是否有选中的元素。
+面板承载当前浏览器的主题偏好；工具栏状态标签会显示当前是否有选中的元素。
 
 ## 快捷键
 

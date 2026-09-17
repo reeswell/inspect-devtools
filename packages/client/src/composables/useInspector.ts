@@ -1,7 +1,6 @@
 import { computed, getCurrentInstance, onUnmounted, shallowRef } from 'vue'
-import type { ClientInspectDevtoolsOptions, CopyFormat } from '@inspect-devtools/core'
+import type { ClientInspectDevtoolsOptions } from '@inspect-devtools/core'
 import { createGrabSelection, getReactDebugSource, getVueInspectorSource, type GrabSelection } from '@inspect-devtools/core/browser'
-import { clearPersistedCopyFormat, loadPersistedCopyFormat, persistCopyFormat } from './copy-format'
 import { formatSelectionLocation } from './selection-location'
 import { useRpc } from './useRpc'
 
@@ -89,20 +88,6 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const hoveredElement = shallowRef<Element | null>(null)
   const selectedElement = shallowRef<Element | null>(null)
   const viewportVersion = shallowRef(0)
-
-  const defaultCopyFormat = clientOptions.copyFormat
-  const copyFormat = shallowRef<CopyFormat>(loadPersistedCopyFormat(clientOptions.projectRoot) ?? defaultCopyFormat)
-  const isCopyFormatOverridden = computed(() => copyFormat.value !== defaultCopyFormat)
-
-  const setCopyFormat = (format: CopyFormat) => {
-    copyFormat.value = format
-    persistCopyFormat(clientOptions.projectRoot, format)
-  }
-
-  const resetCopyFormat = () => {
-    copyFormat.value = defaultCopyFormat
-    clearPersistedCopyFormat(clientOptions.projectRoot)
-  }
 
   const activeElement = computed(() => hoveredElement.value ?? selectedElement.value)
   const activeSelection = computed(() => hoverSelection.value ?? selection.value)
@@ -192,7 +177,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
   const copySelectionLocation = async () => {
     const currentSelection = selection.value
-    const location = currentSelection ? formatSelectionLocation(currentSelection, copyFormat.value, clientOptions.projectRoot) : undefined
+    const location = currentSelection ? formatSelectionLocation(currentSelection, clientOptions.projectRoot) : undefined
     if (!location)
       return
 
@@ -291,10 +276,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
   return {
     activeSelection,
-    copyFormat,
-    defaultCopyFormat,
     hoveredElement,
-    isCopyFormatOverridden,
     isInspecting,
     labelStyle,
     lastError,
@@ -307,9 +289,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     openSelectionInEditor,
     openActiveSelectionInEditor,
     overlayStyle,
-    resetCopyFormat,
     selection,
-    setCopyFormat,
     sourceLabel,
     startInspecting,
     stopInspecting,

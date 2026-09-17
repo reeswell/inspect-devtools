@@ -11,9 +11,6 @@
 
 .inspect-devtools-root {
   --inspect-panel: #17191f;
-  --inspect-surface: #20232b;
-  --inspect-surface-2: #262a33;
-  --inspect-input: #111318;
   --inspect-line: #343946;
   --inspect-line-soft: rgba(52, 57, 70, 0.9);
   --inspect-text: #f2f4f8;
@@ -28,8 +25,6 @@
   --inspect-shadow: 0 18px 54px rgba(0, 0, 0, 0.42);
   --inspect-hover: rgba(255, 255, 255, 0.06);
   --inspect-active: rgba(255, 255, 255, 0.08);
-  --inspect-segment-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --inspect-segment-active-bg: #262a33;
   --inspect-panel-width: min(640px, calc(100vw - 16px));
   --inspect-z-panel: 2147483644;
   --inspect-z-overlay: 2147483645;
@@ -39,9 +34,6 @@
 
 .inspect-devtools-root[data-theme="light"] {
   --inspect-panel: #ffffff;
-  --inspect-surface: #f5f6f8;
-  --inspect-surface-2: #eceef2;
-  --inspect-input: #eef0f3;
   --inspect-line: #d8dce4;
   --inspect-line-soft: #d8dce4;
   --inspect-text: #16181d;
@@ -56,8 +48,6 @@
   --inspect-shadow: 0 18px 54px rgba(15, 23, 42, 0.16);
   --inspect-hover: rgba(0, 0, 0, 0.05);
   --inspect-active: rgba(0, 0, 0, 0.07);
-  --inspect-segment-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
-  --inspect-segment-active-bg: #ffffff;
   color-scheme: light;
 }
 
@@ -80,8 +70,7 @@
 
 .dock-button,
 .icon-button,
-.toolbar-button,
-.ghost-button {
+.toolbar-button {
   border: 1px solid var(--inspect-line);
   border-radius: 6px;
   cursor: pointer;
@@ -142,8 +131,7 @@
 
 .panel-header,
 .header-actions,
-.toolbar,
-.section-heading {
+.toolbar {
   display: flex;
   align-items: center;
 }
@@ -159,7 +147,6 @@
 }
 
 .title,
-.surface h2,
 .panel-error {
   margin: 0;
 }
@@ -194,26 +181,8 @@
   color: var(--inspect-brand);
 }
 
-.ghost-button {
-  display: inline-flex;
-  width: 26px;
-  height: 26px;
-  align-items: center;
-  justify-content: center;
-  border-color: transparent;
-  background: transparent;
-  color: var(--inspect-muted);
-  padding: 0;
-}
-
-.ghost-button:hover {
-  background: var(--inspect-hover);
-  color: var(--inspect-text);
-}
-
 .icon-button:focus-visible,
 .toolbar-button:focus-visible,
-.ghost-button:focus-visible,
 .dock-button:focus-visible,
 .source-badge:focus-visible {
   box-shadow: 0 0 0 2px rgba(var(--inspect-context), 0.5);
@@ -272,93 +241,6 @@
   padding: 8px 12px;
 }
 
-.panel-main {
-  min-height: 0;
-  overflow: auto;
-  padding: 10px;
-}
-
-.surface {
-  border: 1px solid var(--inspect-line-soft);
-  border-radius: 8px;
-  background: var(--inspect-surface);
-  padding: 10px;
-}
-
-.section-heading {
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.segmented {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  border: 1px solid var(--inspect-line-soft);
-  border-radius: 8px;
-  background: var(--inspect-input);
-  padding: 2px;
-}
-
-.segment {
-  position: relative;
-  display: inline-flex;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  color: var(--inspect-muted);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
-}
-
-.segment:hover {
-  color: var(--inspect-text);
-}
-
-.segment[data-active="true"] {
-  background: var(--inspect-segment-active-bg);
-  box-shadow: var(--inspect-segment-shadow);
-  color: var(--inspect-primary);
-}
-
-.segment-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
-
-.segment:has(.segment-input:focus-visible) {
-  box-shadow: 0 0 0 2px rgba(var(--inspect-context), 0.5);
-}
-
-.copy-format-hint {
-  margin: 8px 0 0;
-  color: var(--inspect-muted);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.panel-main-inspect {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-}
-
-.surface h2 {
-  color: var(--inspect-muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
 .inspector-frame {
   position: fixed;
   z-index: var(--inspect-z-overlay);
@@ -414,9 +296,7 @@
 @media (prefers-reduced-motion: reduce) {
   .dock-button,
   .icon-button,
-  .toolbar-button,
-  .ghost-button,
-  .segment {
+  .toolbar-button {
     transition: none;
   }
 }
