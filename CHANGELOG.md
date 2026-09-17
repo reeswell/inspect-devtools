@@ -2,6 +2,13 @@
 
 All notable changes to Inspect Devtools are documented here.
 
+## 0.5.0
+
+**Breaking:** the floating panel and its `Alt+Shift+P` shortcut are removed. The bottom dock is now the only persistent UI, holding the Inspect toggle and the theme toggle; feedback and errors surface as transient toasts above the dock.
+
+- Selecting an element with no resolvable source now reports "No source found for this element" instead of staying silent.
+- The theme toggle moved into the dock; the per-project browser override still applies.
+
 ## 0.4.0
 
 **Breaking:** the `copyFormat` option and the panel's Copy format picker are removed. Copy now always produces an `@`-mention of the source file relative to the repository root (falling back to `@/absolute/path` outside it), a shape understood by Cursor, Claude Code, and other coding agents. Remove `copyFormat` from your Vite config when upgrading.
