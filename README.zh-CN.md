@@ -67,30 +67,6 @@ plugins: [
 
 `inspectDevtoolsVue` 同样支持该选项。
 
-### 复制格式
-
-复制的源码引用支持两种格式。通过 `copyFormat` 设置项目默认格式。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ copyFormat: 'codex' }),
-]
-```
-
-| `copyFormat` | 输出示例 | 适用工具 |
-| --- | --- | --- |
-| `'codex'`（默认） | `[App.vue](/绝对路径/App.vue)` | Codex 及其他支持 Markdown 的工具 |
-| `'cursor'` | `@playgrounds/react/src/components/App.vue`（相对仓库根目录；仓库外文件回退为 `@/绝对路径`） | Cursor、Claude Code |
-
-Claude Code 的文件引用与 Cursor 同为 `@路径` 形式，因此 `cursor` 格式同时适用于两者。
-
-所有格式都会将 Windows 路径统一为正斜杠，且不包含行列号；精确的 `行:列` 定位仍保留给编辑器打开动作。
-
-Vite 配置是面向所有人的项目默认值。面板中还提供 **Copy format** 选择器（Codex、Cursor / Claude Code），选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器的个人覆盖。面板选择优先于 Vite 默认值，并立即作用于自动复制；**Reset to default** 可清除覆盖、恢复项目默认。当 `localStorage` 不可用时，选择仅保留在本次会话内存中，复制功能不受影响。启动 Inspect 或选中元素都不会自动打开面板。
-
-`inspectDevtoolsVue` 同样支持该选项。
-
 ### 主题
 
 dock 与面板默认使用浅色主题。通过 `theme` 可将深色主题设为项目默认。
