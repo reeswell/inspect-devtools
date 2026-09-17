@@ -78,10 +78,10 @@ plugins: [
 ]
 ```
 
-The panel header also offers a theme toggle; its choice is stored per project in the browser's `localStorage` as a personal override of the Vite default.
+The dock also offers a theme toggle; its choice is stored per project in the browser's `localStorage` as a personal override of the Vite default.
 
-![Panel in the light theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-light.png#gh-light-mode-only)
-![Panel in the dark theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-dark.png#gh-dark-mode-only)
+![Dock in the light theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-light.png#gh-light-mode-only)
+![Dock in the dark theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-dark.png#gh-dark-mode-only)
 
 The same option is available on `inspectDevtoolsVue`.
 
@@ -89,21 +89,20 @@ The same option is available on `inspectDevtoolsVue`.
 
 1. Start the Vite dev server.
 2. Press `Alt+Shift+I` or click the crosshair button in the bottom dock.
-3. Hover an element to preview its source label, then click the element. The panel remains closed unless you open it explicitly.
+3. Hover an element to preview its source label, then click the element.
 4. When source metadata is available, selecting automatically copies a reference to the source file and opens that file at its exact line and column in the configured editor.
 
-Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. Starting Inspect or selecting an element never opens the panel automatically.
+Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation.
 
-The panel hosts the per-browser theme preference; the status pill next to the Inspect toggle shows whether an element is selected.
+Feedback and errors surface as transient toasts above the dock; when no source file can be resolved for an element, a toast says so instead of copying or opening anything.
 
 ## Keyboard shortcuts
 
 | Shortcut | Action |
 | --- | --- |
 | `Alt+Shift+I` | Toggle Inspect mode |
-| `Alt+Shift+P` | Toggle the panel |
 | `Escape` while inspecting | Stop Inspect mode |
-| `Escape` with a selection | Clear the selection and return to Ready |
+| `Escape` with a selection | Clear the selection |
 
 Shortcuts are ignored while focus is inside an input, textarea, select, or editable element.
 

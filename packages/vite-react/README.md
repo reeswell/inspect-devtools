@@ -14,4 +14,4 @@ import { inspectDevtoolsReact } from '@inspect-devtools/vite-react'
 export default defineConfig({ plugins: [react(), ...inspectDevtoolsReact()] })
 ```
 
-Press `Alt+Shift+I`, click an element, then Inspect Devtools copies an `@relative/path` source reference (understood by Cursor and Claude Code) and opens it at the precise `file:line:column` location in your editor. The panel stays closed unless opened explicitly. See the repository README for all shortcuts, options, and limitations.
+Press `Alt+Shift+I`, click an element, then Inspect Devtools copies an `@relative/path` source reference (understood by Cursor and Claude Code) and opens it at the precise `file:line:column` location in your editor. See the repository README for all shortcuts, options, and limitations.

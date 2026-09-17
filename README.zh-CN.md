@@ -78,10 +78,10 @@ plugins: [
 ]
 ```
 
-面板头部也提供主题切换按钮，选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器对 Vite 默认值的个人覆盖。
+dock 中也提供主题切换按钮，选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器对 Vite 默认值的个人覆盖。
 
-![浅色主题下的面板](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-light.png#gh-light-mode-only)
-![深色主题下的面板](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/panel-dark.png#gh-dark-mode-only)
+![浅色主题下的 dock](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-light.png#gh-light-mode-only)
+![深色主题下的 dock](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-dark.png#gh-dark-mode-only)
 
 `inspectDevtoolsVue` 同样支持该选项。
 
@@ -89,21 +89,20 @@ plugins: [
 
 1. 启动 Vite 开发服务器。
 2. 按 `Alt+Shift+I`，或点击底部 dock 中的准星按钮。
-3. 悬停可预览源码标签；点击目标元素完成选中。面板保持关闭，除非主动通过 Panel 按钮或快捷键打开。
+3. 悬停可预览源码标签；点击目标元素完成选中。
 4. 当元素存在可用源码信息时，选中会自动复制源码文件引用，并在配置的编辑器中精确打开对应行列。
 
-Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。复制不附带行列信息；行列仅供编辑器打开时精确跳转使用。启动 Inspect 或选中元素都不会自动打开面板。
+Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。复制不附带行列信息；行列仅供编辑器打开时精确跳转使用。
 
-面板承载当前浏览器的主题偏好；工具栏状态标签会显示当前是否有选中的元素。
+反馈与错误以 dock 上方的瞬态 toast 呈现；当元素无法解析出源码文件时，会以 toast 明确提示，不会复制也不会打开编辑器。
 
 ## 快捷键
 
 | 快捷键 | 操作 |
 | --- | --- |
 | `Alt+Shift+I` | 切换 Inspect 模式 |
-| `Alt+Shift+P` | 切换面板 |
 | Inspect 中按 `Escape` | 退出 Inspect 模式 |
-| 已选中时按 `Escape` | 清除选中状态并回到 Ready |
+| 已选中时按 `Escape` | 清除选中状态 |
 
 当焦点位于 input、textarea、select 或可编辑元素时，工具不会拦截这些快捷键。
 

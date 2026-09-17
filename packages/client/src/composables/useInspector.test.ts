@@ -24,8 +24,8 @@ afterEach(() => {
 describe('getInspectorShortcutAction', () => {
   it('toggles inspection with Alt+Shift+I and cancels with Escape', () => {
     expect(getInspectorShortcutAction({ altKey: true, code: 'KeyI', shiftKey: true, target: document.body })).toBe('toggle')
-    expect(getInspectorShortcutAction({ altKey: true, code: 'KeyP', shiftKey: true, target: document.body })).toBe('toggle-panel')
     expect(getInspectorShortcutAction({ altKey: false, code: 'Escape', shiftKey: false, target: document.body })).toBe('cancel')
+    expect(getInspectorShortcutAction({ altKey: true, code: 'KeyP', shiftKey: true, target: document.body })).toBeUndefined()
   })
 
   it('ignores shortcuts from editable elements', () => {
@@ -79,6 +79,41 @@ describe('useInspector', () => {
     expect(writeText).toHaveBeenCalledWith('@src/App.vue')
     expect(inspector.feedback.value).toBe('Copied source location')
     inspector.dispose()
+  })
+
+  it('reports when no source can be resolved for the selected element', async () => {
+    document.body.innerHTML = '<button>Bare</button>'
+    const inspector = useInspector(createClientOptions({ framework: 'react' }))
+    inspector.startInspecting()
+    document.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(inspector.selection.value?.filePath).toBeUndefined()
+    expect(inspector.lastError.value).toBe('No source found for this element')
+    expect(inspector.feedback.value).toBe('')
+    inspector.dispose()
+  })
+
+  it('dismisses feedback and error notices automatically', async () => {
+    vi.useFakeTimers()
+    try {
+      const writeText = stubClipboard()
+      const inspector = useInspector(createClientOptions())
+      inspector.selection.value = {
+        framework: 'vue', tagName: 'button', filePath: '/project/src/App.vue', line: 8, column: 5,
+      }
+
+      await inspector.copySelectionLocation()
+      expect(writeText).toHaveBeenCalledWith('@src/App.vue')
+      expect(inspector.feedback.value).toBe('Copied source location')
+
+      vi.advanceTimersByTime(2400)
+      expect(inspector.feedback.value).toBe('')
+      inspector.dispose()
+    }
+    finally {
+      vi.useRealTimers()
+    }
   })
 
   it('reports editor opening progress and success', async () => {

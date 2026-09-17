@@ -21,15 +21,13 @@ export const isEditableTarget = (target: EventTarget | null): boolean => {
     || Boolean(target.closest('[contenteditable="true"]'))
 }
 
-export const getInspectorShortcutAction = (event: Pick<KeyboardEvent, 'altKey' | 'code' | 'shiftKey' | 'target'>): 'cancel' | 'toggle' | 'toggle-panel' | undefined => {
+export const getInspectorShortcutAction = (event: Pick<KeyboardEvent, 'altKey' | 'code' | 'shiftKey' | 'target'>): 'cancel' | 'toggle' | undefined => {
   if (isEditableTarget(event.target))
     return undefined
   if (event.code === 'Escape')
     return 'cancel'
   if (event.altKey && event.shiftKey && event.code === 'KeyI')
     return 'toggle'
-  if (event.altKey && event.shiftKey && event.code === 'KeyP')
-    return 'toggle-panel'
 }
 
 const formatSourceLabel = (selection: GrabSelection): string => {
@@ -74,10 +72,12 @@ const copyText = async (text: string): Promise<void> => {
 
 interface UseInspectorOptions {
   onInspectStart?: () => void
-  onTogglePanel?: () => void
 }
 
-export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onInspectStart, onTogglePanel }: UseInspectorOptions = {}) => {
+const FEEDBACK_TIMEOUT = 2400
+const ERROR_TIMEOUT = 3600
+
+export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onInspectStart }: UseInspectorOptions = {}) => {
   const rpc = useRpc(clientOptions)
   const isInspecting = shallowRef(false)
   const lastError = shallowRef('')
@@ -91,6 +91,30 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
   const activeElement = computed(() => hoveredElement.value ?? selectedElement.value)
   const activeSelection = computed(() => hoverSelection.value ?? selection.value)
+
+  let feedbackTimer: ReturnType<typeof setTimeout> | undefined
+  let errorTimer: ReturnType<typeof setTimeout> | undefined
+
+  const showFeedback = (message: string) => {
+    feedback.value = message
+    clearTimeout(feedbackTimer)
+    if (message)
+      feedbackTimer = setTimeout(() => { feedback.value = '' }, FEEDBACK_TIMEOUT)
+  }
+
+  const showError = (message: string) => {
+    lastError.value = message
+    clearTimeout(errorTimer)
+    if (message)
+      errorTimer = setTimeout(() => { lastError.value = '' }, ERROR_TIMEOUT)
+  }
+
+  const clearNotices = () => {
+    clearTimeout(feedbackTimer)
+    clearTimeout(errorTimer)
+    feedback.value = ''
+    lastError.value = ''
+  }
 
   const overlayStyle = computed(() => {
     viewportVersion.value
@@ -161,16 +185,16 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     if (!currentSelection?.filePath || isOpening.value)
       return
 
-    lastError.value = ''
-    feedback.value = 'Opening in editor…'
+    showError('')
+    showFeedback('Opening in editor…')
     isOpening.value = true
     try {
       await rpc.openInEditor(currentSelection.filePath, currentSelection.line, currentSelection.column)
-      feedback.value = 'Opened in editor'
+      showFeedback('Opened in editor')
     }
     catch (error) {
-      lastError.value = error instanceof Error ? error.message : 'Unable to open file'
-      feedback.value = ''
+      showFeedback('')
+      showError(error instanceof Error ? error.message : 'Unable to open file')
     }
     finally { isOpening.value = false }
   }
@@ -181,14 +205,14 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     if (!location)
       return
 
-    lastError.value = ''
+    showError('')
     try {
       await copyText(location)
-      feedback.value = 'Copied source location'
+      showFeedback('Copied source location')
     }
     catch (error) {
-      lastError.value = error instanceof Error ? error.message : 'Unable to copy path'
-      feedback.value = ''
+      showFeedback('')
+      showError(error instanceof Error ? error.message : 'Unable to copy path')
     }
   }
 
@@ -210,12 +234,17 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     isInspecting.value = false
     hoveredElement.value = null
     hoverSelection.value = null
+    if (!nextSelection.filePath) {
+      showFeedback('')
+      showError('No source found for this element')
+      return
+    }
     await copySelectionLocation()
     await openSelectionInEditor(nextSelection)
   }
 
   const startInspecting = () => {
-    lastError.value = ''
+    showError('')
     onInspectStart?.()
     isInspecting.value = true
   }
@@ -229,8 +258,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const clearSelection = () => {
     selectedElement.value = null
     selection.value = null
-    feedback.value = ''
-    lastError.value = ''
+    clearNotices()
   }
 
   const refreshViewport = () => {
@@ -251,13 +279,11 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       event.preventDefault()
       isInspecting.value ? stopInspecting() : startInspecting()
     }
-    if (action === 'toggle-panel') {
-      event.preventDefault()
-      onTogglePanel?.()
-    }
   }
 
   const dispose = () => {
+    clearTimeout(feedbackTimer)
+    clearTimeout(errorTimer)
     window.removeEventListener('pointermove', onPointerMove, true)
     window.removeEventListener('click', onClick, true)
     window.removeEventListener('keydown', onKeyDown, true)

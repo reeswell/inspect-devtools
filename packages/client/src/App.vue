@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ClientInspectDevtoolsOptions, InspectDevtoolsTheme } from '@inspect-devtools/core'
-import { nextTick, shallowRef, useTemplateRef } from 'vue'
+import { shallowRef } from 'vue'
 import { loadPersistedTheme, persistTheme } from './composables/theme'
 import { useInspector } from './composables/useInspector'
 
@@ -8,32 +8,20 @@ const props = defineProps<{
   options: ClientInspectDevtoolsOptions
 }>()
 
-const isOpen = shallowRef(false)
-const panelButton = useTemplateRef<HTMLButtonElement>('panelButton')
-const panelHeading = useTemplateRef<HTMLHeadingElement>('panelHeading')
-const togglePanel = async () => {
-  isOpen.value = !isOpen.value
-  await nextTick()
-  if (isOpen.value) panelHeading.value?.focus()
-  else panelButton.value?.focus()
-}
-
 const theme = shallowRef<InspectDevtoolsTheme>(loadPersistedTheme(props.options.projectRoot) ?? props.options.theme)
 const toggleTheme = () => {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
   persistTheme(props.options.projectRoot, theme.value)
 }
 
-const inspector = useInspector(props.options, { onTogglePanel: togglePanel })
+const inspector = useInspector(props.options)
 const {
   isInspecting,
   feedback,
-  isOpening,
   labelStyle,
   lastError,
   openActiveSelectionInEditor,
   overlayStyle,
-  selection,
   sourceLabel,
   startInspecting,
   stopInspecting,
@@ -58,9 +46,13 @@ const {
       <span>{{ sourceLabel.hint }}</span>
     </button>
 
+    <div class="toast-stack" aria-live="polite">
+      <p v-if="lastError" class="toast toast-error" role="alert">{{ lastError }}</p>
+      <p v-else-if="feedback" class="toast">{{ feedback }}</p>
+    </div>
+
     <div class="bottom-dock">
       <button
-        ref="panelButton"
         class="dock-button"
         type="button"
         :aria-pressed="isInspecting"
@@ -76,60 +68,18 @@ const {
       <button
         class="dock-button"
         type="button"
-        aria-label="Toggle panel (Alt+Shift+P)"
-        title="Toggle panel (Alt+Shift+P)"
-        :aria-expanded="isOpen"
-        @click="togglePanel"
+        :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+        :title="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+        @click="toggleTheme"
       >
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <rect x="1.8" y="2.8" width="12.4" height="10.4" rx="2" />
-          <path d="M10 2.8v10.4" />
+        <svg v-if="theme === 'dark'" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <circle cx="8" cy="8" r="3" />
+          <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1" />
+        </svg>
+        <svg v-else width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M13.4 9.6A5.4 5.4 0 0 1 6.4 2.6a5.4 5.4 0 1 0 7 7Z" />
         </svg>
       </button>
     </div>
-
-    <aside v-if="isOpen" class="panel-shell" aria-labelledby="inspect-devtools-title">
-      <header class="panel-header">
-        <h1 id="inspect-devtools-title" ref="panelHeading" class="title" tabindex="-1">Inspect Devtools</h1>
-        <div class="header-actions">
-          <button
-            class="icon-button"
-            type="button"
-            :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-            :title="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-            @click="toggleTheme"
-          >
-            <svg v-if="theme === 'dark'" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-              <circle cx="8" cy="8" r="3" />
-              <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1" />
-            </svg>
-            <svg v-else width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M13.4 9.6A5.4 5.4 0 0 1 6.4 2.6a5.4 5.4 0 1 0 7 7Z" />
-            </svg>
-          </button>
-          <button class="icon-button" type="button" aria-label="Close panel" title="Close panel" @click="togglePanel">×</button>
-        </div>
-      </header>
-
-      <div class="toolbar">
-        <button
-          class="toolbar-button"
-          type="button"
-          :disabled="isOpening"
-          :aria-pressed="isInspecting"
-          :aria-label="isInspecting ? 'Stop inspecting (Alt+Shift+I)' : 'Inspect component (Alt+Shift+I)'"
-          :title="isInspecting ? 'Stop inspecting (Alt+Shift+I)' : 'Inspect component (Alt+Shift+I)'"
-          @click="isInspecting ? stopInspecting() : startInspecting()"
-        >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-            <circle cx="8" cy="8" r="3.4" />
-            <path d="M8 1.6v2.2M8 12.2v2.2M1.6 8h2.2M12.2 8h2.2" />
-          </svg>
-        </button>
-        <span class="status-pill">{{ isInspecting ? 'Inspecting' : selection ? 'Selected' : 'Ready' }}</span>
-      </div>
-      <p v-if="feedback" class="panel-feedback" aria-live="polite">{{ feedback }}</p>
-      <p v-if="lastError" class="panel-error" role="alert">{{ lastError }}</p>
-    </aside>
   </div>
 </template>
