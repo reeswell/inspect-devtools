@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/vite-react",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Vite source inspector for React applications.",
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
