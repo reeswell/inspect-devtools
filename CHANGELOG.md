@@ -2,6 +2,13 @@
 
 All notable changes to Inspect Devtools are documented here.
 
+## 0.4.0
+
+**Breaking:** the `copyFormat` option and the panel's Copy format picker are removed. Copy now always produces an `@`-mention of the source file relative to the repository root (falling back to `@/absolute/path` outside it), a shape understood by Cursor, Claude Code, and other coding agents. Remove `copyFormat` from your Vite config when upgrading.
+
+- The panel keeps only the Inspect toggle, status, and theme preference.
+- The README gains a workflow GIF and light/dark panel screenshots.
+
 ## 0.3.0
 
 - Redesign the dock and panel with a minimal icon-based UI: the dock becomes two icon buttons, and the panel keeps only the Inspect toggle, status, and preferences.
