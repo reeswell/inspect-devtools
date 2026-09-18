@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/client",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Browser client runtime for Inspect Devtools.",
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
