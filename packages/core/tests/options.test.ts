@@ -17,4 +17,14 @@ describe('resolveInspectDevtoolsOptions', () => {
   it('resolves the configured theme', () => {
     expect(resolveInspectDevtoolsOptions({ theme: 'dark' }).theme).toBe('dark')
   })
+
+  it('defaults copyRoute to true and honors an explicit opt-out', () => {
+    expect(resolveInspectDevtoolsOptions().copyRoute).toBe(true)
+    expect(resolveInspectDevtoolsOptions({ copyRoute: false }).copyRoute).toBe(false)
+  })
+
+  it('defaults copyFormat to mention and resolves the link format', () => {
+    expect(resolveInspectDevtoolsOptions().copyFormat).toBe('mention')
+    expect(resolveInspectDevtoolsOptions({ copyFormat: 'link' }).copyFormat).toBe('link')
+  })
 })

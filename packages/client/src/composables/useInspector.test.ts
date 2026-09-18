@@ -5,6 +5,8 @@ import { getClickSelectionAction, getInspectorShortcutAction, useInspector } fro
 const createClientOptions = (overrides: Partial<ClientInspectDevtoolsOptions> = {}): ClientInspectDevtoolsOptions => ({
   framework: 'vue',
   theme: 'light',
+  copyRoute: true,
+  copyFormat: 'mention',
   projectRoot: '/project',
   endpoints: { openInEditor: '/open' },
   ...overrides,
@@ -77,7 +79,7 @@ describe('useInspector', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
-    expect(writeText).toHaveBeenCalledWith('@src/App.tsx')
+    expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx')
     expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
       method: 'POST',
       body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
@@ -104,7 +106,54 @@ describe('useInspector', () => {
 
     await inspector.copySelectionLocation()
 
+    expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.vue')
+    expect(inspector.feedback.value).toBe('Copied source location')
+    inspector.dispose()
+  })
+
+  it('appends the current route with search and hash to the copied mentions', async () => {
+    window.history.pushState({}, '', '/dashboard?tab=overview#metrics')
+    try {
+      const writeText = stubClipboard()
+      const inspector = useInspector(createClientOptions())
+      inspector.selections.value = [{
+        framework: 'vue', tagName: 'button', filePath: '/project/src/App.vue', line: 8, column: 5,
+      }]
+
+      await inspector.copySelectionLocation()
+
+      expect(writeText).toHaveBeenCalledWith('Route: /dashboard?tab=overview#metrics\n\n@src/App.vue')
+      inspector.dispose()
+    }
+    finally {
+      window.history.pushState({}, '', '/')
+    }
+  })
+
+  it('omits the route line when copyRoute is disabled', async () => {
+    const writeText = stubClipboard()
+    const inspector = useInspector(createClientOptions({ copyRoute: false }))
+    inspector.selections.value = [{
+      framework: 'vue', tagName: 'button', filePath: '/project/src/App.vue', line: 8, column: 5,
+    }]
+
+    await inspector.copySelectionLocation()
+
     expect(writeText).toHaveBeenCalledWith('@src/App.vue')
+    expect(inspector.feedback.value).toBe('Copied source location')
+    inspector.dispose()
+  })
+
+  it('copies a Markdown link when copyFormat is link', async () => {
+    const writeText = stubClipboard()
+    const inspector = useInspector(createClientOptions({ copyFormat: 'link' }))
+    inspector.selections.value = [{
+      framework: 'vue', tagName: 'button', filePath: '/project/src/App.vue', line: 8, column: 5,
+    }]
+
+    await inspector.copySelectionLocation()
+
+    expect(writeText).toHaveBeenCalledWith('Route: / \n\n[App.vue](/project/src/App.vue)')
     expect(inspector.feedback.value).toBe('Copied source location')
     inspector.dispose()
   })
@@ -132,7 +181,7 @@ describe('useInspector', () => {
       }]
 
       await inspector.copySelectionLocation()
-      expect(writeText).toHaveBeenCalledWith('@src/App.vue')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.vue')
       expect(inspector.feedback.value).toBe('Copied source location')
 
       vi.advanceTimersByTime(2400)
@@ -184,7 +233,7 @@ describe('useInspector', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/A.tsx', '/project/src/B.tsx'])
-      expect(writeText).toHaveBeenCalledWith('@src/A.tsx\n@src/B.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/A.tsx\n@src/B.tsx')
       expect(fetch).not.toHaveBeenCalled()
       expect(inspector.feedback.value).toBe('Copied 2 source locations')
       inspector.dispose()
@@ -212,7 +261,7 @@ describe('useInspector', () => {
 
       expect(inspector.selections.value).toHaveLength(2)
       expect(inspector.overlayStyles.value).toHaveLength(2)
-      expect(writeText).toHaveBeenCalledWith('@src/A.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/A.tsx')
       expect(fetch).toHaveBeenCalledTimes(1)
       expect(fetch).toHaveBeenCalledWith('/open', expect.objectContaining({
         body: JSON.stringify({ path: '/project/src/A.tsx', line: 3, column: 1 }),
@@ -259,7 +308,7 @@ describe('useInspector', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/Inner.tsx'])
-      expect(writeText).toHaveBeenCalledWith('@src/Inner.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/Inner.tsx')
       inspector.dispose()
     })
 
@@ -336,7 +385,7 @@ describe('useInspector', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/A.tsx'])
-      expect(writeText).toHaveBeenCalledWith('@src/A.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/A.tsx')
       inspector.dispose()
     })
   })
@@ -367,7 +416,7 @@ describe('useInspector', () => {
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/A.tsx', '/project/src/B.tsx'])
       expect(inspector.isInspecting.value).toBe(true)
-      expect(writeText).toHaveBeenLastCalledWith('@src/A.tsx\n@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/A.tsx\n@src/B.tsx')
       expect(inspector.feedback.value).toBe('Copied 2 source locations')
       expect(fetch).not.toHaveBeenCalled()
       inspector.dispose()
@@ -408,7 +457,7 @@ describe('useInspector', () => {
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/B.tsx'])
       expect(inspector.isInspecting.value).toBe(true)
-      expect(writeText).toHaveBeenLastCalledWith('@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/B.tsx')
       expect(fetch).not.toHaveBeenCalled()
 
       document.querySelector('#b')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }))
@@ -488,7 +537,7 @@ describe('useInspector', () => {
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/A.tsx', '/project/src/B.tsx'])
       expect(inspector.isInspecting.value).toBe(true)
-      expect(writeText).toHaveBeenLastCalledWith('@src/A.tsx\n@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/A.tsx\n@src/B.tsx')
       expect(fetch).not.toHaveBeenCalled()
       inspector.dispose()
     })
@@ -516,7 +565,7 @@ describe('useInspector', () => {
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/B.tsx'])
       expect(inspector.isInspecting.value).toBe(true)
-      expect(writeText).toHaveBeenLastCalledWith('@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/B.tsx')
       expect(fetch).not.toHaveBeenCalled()
       inspector.dispose()
     })
@@ -537,7 +586,7 @@ describe('useInspector', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/A.tsx', '/project/src/B.tsx'])
-      expect(writeText).toHaveBeenLastCalledWith('@src/A.tsx\n@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/A.tsx\n@src/B.tsx')
       expect(fetch).toHaveBeenCalledTimes(1)
       inspector.dispose()
     })
@@ -558,7 +607,7 @@ describe('useInspector', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(inspector.selections.value.map(item => item.filePath)).toEqual(['/project/src/B.tsx'])
-      expect(writeText).toHaveBeenLastCalledWith('@src/B.tsx')
+      expect(writeText).toHaveBeenLastCalledWith('Route: / \n\n@src/B.tsx')
       inspector.dispose()
     })
 

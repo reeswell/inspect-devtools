@@ -38,6 +38,8 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('mountInspectDevtools')
     expect(code).toContain('"framework":"react"')
     expect(code).toContain('"theme":"light"')
+    expect(code).toContain('"copyRoute":true')
+    expect(code).toContain('"copyFormat":"mention"')
     expect(code).toContain('"projectRoot":"/project"')
   })
 
@@ -53,6 +55,34 @@ describe('createInspectDevtoolsPlugin', () => {
 
     const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
     expect(code).toContain('"theme":"dark"')
+  })
+
+  it('passes the copyRoute opt-out to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { copyRoute: false },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"copyRoute":false')
+  })
+
+  it('passes the copyFormat option to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { copyFormat: 'link' },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"copyFormat":"link"')
   })
 
 

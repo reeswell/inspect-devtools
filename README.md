@@ -85,6 +85,32 @@ The dock also offers a theme toggle; its choice is stored per project in the bro
 
 The same option is available on `inspectDevtoolsVue`.
 
+### Route context in copies
+
+Every copy starts with a single `Route:` line holding the current pathname, search, and hash (no origin), so the agent knows which page the selected elements live on—which instance of a reused component you mean, and where to reproduce an issue. Pass `copyRoute: false` to keep copies to bare `@`-mentions, for example in a component-library playground without routing.
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyRoute: false }),
+]
+```
+
+The same option is available on `inspectDevtoolsVue`.
+
+### Copy format
+
+Copies default to an `@`-mention (`copyFormat: 'mention'`), a shape coding agents understand. Pass `copyFormat: 'link'` to copy a standard Markdown link such as `[App.vue](/absolute/path/App.vue)` instead—useful when the paste destination is a document, ticket, or chat tool rather than an AI agent.
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyFormat: 'link' }),
+]
+```
+
+The same option is available on `inspectDevtoolsVue`.
+
 ## Workflow
 
 1. Start the Vite dev server.
@@ -93,7 +119,7 @@ The same option is available on `inspectDevtoolsVue`.
 4. Refine the selection Photoshop-style without leaving Inspect mode: `Shift+click` or `Shift+drag` adds elements, `Alt+click` (`Option+click` on macOS) or `Alt+drag` removes them—click anywhere inside a highlight frame to remove that entry. Holding `Shift` or `Alt` while hovering previews the outcome: a solid green frame for what will be selected, a red frame over the entry that will be removed (and the marquee turns red while `Alt`-dragging). Every change re-copies the full set of `@`-mentions to the clipboard. The selection persists after Inspect mode exits: as long as highlight frames remain on the page, the hover previews stay live and `Shift+click`/`Alt+click` keep adding and removing (unmodified hovers and clicks are never intercepted); `Escape` clears the selection.
 5. When source metadata is available, selecting automatically copies a reference to the source file. The configured editor opens the file at its exact line and column only when the selection resolves to exactly one file; for multi-file selections, click the source label to open the active entry instead.
 
-Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation.
+Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. A single `Route: /dashboard?tab=overview` line precedes the mentions, naming the page the selection lives on; see [Route context in copies](#route-context-in-copies) to turn it off. For pasting outside AI tools, `copyFormat: 'link'` copies a Markdown link instead—see [Copy format](#copy-format).
 
 Feedback and errors surface as transient toasts above the dock; when no source file can be resolved for an element, a toast says so instead of copying or opening anything.
 

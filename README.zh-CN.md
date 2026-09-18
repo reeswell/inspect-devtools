@@ -85,6 +85,32 @@ dock 中也提供主题切换按钮，选择结果按项目保存在浏览器 `l
 
 `inspectDevtoolsVue` 同样支持该选项。
 
+### 复制内容附带路由
+
+每次复制开头附带一行 `Route:`，内容为当前页面的 pathname、search 与 hash（不含 origin），AI 据此判断所选元素位于哪个页面、是哪个复用组件的哪个实例，以及该去哪里复现问题。若项目没有路由概念（如组件库 playground），可传入 `copyRoute: false` 保持纯 `@` 引用。
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyRoute: false }),
+]
+```
+
+`inspectDevtoolsVue` 同样支持该选项。
+
+### 复制格式
+
+复制内容默认为 `@` 引用（`copyFormat: 'mention'`），编码助手可直接解析。传入 `copyFormat: 'link'` 则复制标准 Markdown 链接，如 `[App.vue](/绝对路径/App.vue)`——适合粘贴到文档、ticket 或聊天工具等非 AI 目的地。
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyFormat: 'link' }),
+]
+```
+
+`inspectDevtoolsVue` 同样支持该选项。
+
 ## 使用流程
 
 1. 启动 Vite 开发服务器。
@@ -93,7 +119,7 @@ dock 中也提供主题切换按钮，选择结果按项目保存在浏览器 `l
 4. 仿 Photoshop 的加减选让你无需退出 Inspect 模式即可调整选择：`Shift+点击` 或 `Shift+拖拽` 加选元素，`Alt+点击`（macOS 为 `Option+点击`）或 `Alt+拖拽` 减选元素——点击高亮框内任意位置即可移除该框。悬浮时按住 `Shift` 或 `Alt` 会预演操作结果：即将选中的元素显示实线绿框，即将移除的条目罩上红框（`Alt+拖拽` 时选框也会变红）。每次变更都会把当前全部 `@` 引用重新复制到剪贴板。退出 Inspect 模式后选区仍然保留：只要高亮框还在页面上，按住 `Shift`/`Alt` 悬浮同样显示加减选预览，`Shift+点击` 和 `Alt+点击` 也能继续加减选（不带修饰键的悬浮和点击都不会被拦截）；按 `Escape` 清空整个选区。
 5. 当元素存在可用源码信息时，选中会自动复制源码文件引用；只有当选择恰好解析到一个源码文件时，才会在配置的编辑器中精确打开对应行列。多文件选择请通过源码标签按钮手动打开当前项。
 
-Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。复制不附带行列信息；行列仅供编辑器打开时精确跳转使用。
+Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。复制不附带行列信息；行列仅供编辑器打开时精确跳转使用。引用列表之前另起一行 `Route: /dashboard?tab=overview`，标明所选内容位于哪个页面；如需关闭见[复制内容附带路由](#复制内容附带路由)。粘贴到非 AI 工具时可用 `copyFormat: 'link'` 改为 Markdown 链接，见[复制格式](#复制格式)。
 
 反馈与错误以 dock 上方的瞬态 toast 呈现；当元素无法解析出源码文件时，会以 toast 明确提示，不会复制也不会打开编辑器。
 

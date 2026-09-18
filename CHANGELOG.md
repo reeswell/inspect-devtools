@@ -2,6 +2,11 @@
 
 All notable changes to Inspect Devtools are documented here.
 
+## Unreleased
+
+- Copy now prepends a single `Route:` line before the `@`-mentions, carrying the current pathname, search, and hash (no origin), so coding agents know which page the selection lives on. A route ending with `/` gets a trailing space so pasting into an agent input doesn't trigger slash-command completion. Add a `copyRoute` project option (`true` by default); set it to `false` to keep copies to bare `@`-mentions.
+- Bring back a project-level copy format option as `copyFormat`: `'mention'` (default) keeps the `@`-mention for coding agents; `'link'` copies a standard Markdown link such as `[App.vue](/absolute/path/App.vue)` for documents, tickets, and other non-AI destinations.
+
 ## 0.5.0
 
 **Breaking:** the floating panel and its `Alt+Shift+P` shortcut are removed. The bottom dock is now the only persistent UI, holding the Inspect toggle and the theme toggle; feedback and errors surface as transient toasts above the dock.

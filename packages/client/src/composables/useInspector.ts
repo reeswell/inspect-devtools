@@ -1,7 +1,7 @@
 import { computed, getCurrentInstance, onUnmounted, shallowRef } from 'vue'
 import type { ClientInspectDevtoolsOptions } from '@inspect-devtools/core'
 import { createGrabSelection, getReactDebugSource, getVueInspectorSource, type GrabSelection } from '@inspect-devtools/core/browser'
-import { formatSelectionLocation } from './selection-location'
+import { formatRouteLocation, formatSelectionLocation } from './selection-location'
 import { useRpc } from './useRpc'
 
 const isDevtoolsElement = (element: EventTarget | null): boolean => {
@@ -345,7 +345,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const copySelectionLocation = async () => {
     const locations = [...new Set(
       selections.value
-        .map(item => formatSelectionLocation(item, clientOptions.projectRoot))
+        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot))
         .filter((location): location is string => Boolean(location)),
     )]
     if (!locations.length)
@@ -353,7 +353,9 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
     showError('')
     try {
-      await copyText(locations.join('\n'))
+      // 路由是页面级上下文，整段复制只带一行，放在 @ 引用之前
+      const routeLine = clientOptions.copyRoute ? `${formatRouteLocation(window.location)}\n\n` : ''
+      await copyText(`${routeLine}${locations.join('\n')}`)
       showFeedback(locations.length > 1 ? `Copied ${locations.length} source locations` : 'Copied source location')
     }
     catch (error) {
