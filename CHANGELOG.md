@@ -2,7 +2,7 @@
 
 All notable changes to Inspect Devtools are documented here.
 
-## Unreleased
+## 0.7.0
 
 - Copy now prepends a single `Route:` line before the `@`-mentions, carrying the current pathname, search, and hash (no origin), so coding agents know which page the selection lives on. A route ending with `/` gets a trailing space so pasting into an agent input doesn't trigger slash-command completion. Add a `copyRoute` project option (`true` by default); set it to `false` to keep copies to bare `@`-mentions.
 - Bring back a project-level copy format option as `copyFormat`: `'mention'` (default) keeps the `@`-mention for coding agents; `'link'` copies a standard Markdown link such as `[App.vue](/absolute/path/App.vue)` for documents, tickets, and other non-AI destinations.
