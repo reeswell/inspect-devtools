@@ -88,9 +88,10 @@ The same option is available on `inspectDevtoolsVue`.
 ## Workflow
 
 1. Start the Vite dev server.
-2. Press `Alt+Shift+I` or click the crosshair button in the bottom dock.
-3. Hover an element to preview its source label, then click the element.
-4. When source metadata is available, selecting automatically copies a reference to the source file and opens that file at its exact line and column in the configured editor.
+2. Press `Alt+Shift+I` or click the crosshair button in the bottom dock. The crosshair button shows a badge with the current selection count.
+3. Hover an element to preview its source label, then click the element to select it. Drag a marquee to select several elements at once: every matched element gets its own highlight frame, and `@`-mentions are deduplicated per source file at copy time, one per line.
+4. Refine the selection Photoshop-style without leaving Inspect mode: `Shift+click` or `Shift+drag` adds elements, `Alt+click` (`Option+click` on macOS) or `Alt+drag` removes them—click anywhere inside a highlight frame to remove that entry. Holding `Shift` or `Alt` while hovering previews the outcome: a solid green frame for what will be selected, a red frame over the entry that will be removed (and the marquee turns red while `Alt`-dragging). Every change re-copies the full set of `@`-mentions to the clipboard. The selection persists after Inspect mode exits: as long as highlight frames remain on the page, the hover previews stay live and `Shift+click`/`Alt+click` keep adding and removing (unmodified hovers and clicks are never intercepted); `Escape` clears the selection.
+5. When source metadata is available, selecting automatically copies a reference to the source file. The configured editor opens the file at its exact line and column only when the selection resolves to exactly one file; for multi-file selections, click the source label to open the active entry instead.
 
 Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation.
 
@@ -101,6 +102,8 @@ Feedback and errors surface as transient toasts above the dock; when no source f
 | Shortcut | Action |
 | --- | --- |
 | `Alt+Shift+I` | Toggle Inspect mode |
+| `Shift+click` / `Shift+drag` while inspecting | Add elements to the selection |
+| `Alt+click` / `Alt+drag` while inspecting (`Option` on macOS) | Remove elements from the selection |
 | `Escape` while inspecting | Stop Inspect mode |
 | `Escape` with a selection | Clear the selection |
 

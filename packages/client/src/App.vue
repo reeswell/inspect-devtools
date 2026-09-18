@@ -17,11 +17,16 @@ const toggleTheme = () => {
 const inspector = useInspector(props.options)
 const {
   isInspecting,
+  isMarqueeing,
   feedback,
+  hoverOverlayStyle,
   labelStyle,
   lastError,
+  marqueeStyle,
+  modifierAction,
   openActiveSelectionInEditor,
-  overlayStyle,
+  overlayStyles,
+  selections,
   sourceLabel,
   startInspecting,
   stopInspecting,
@@ -31,7 +36,16 @@ const {
 
 <template>
   <div class="inspect-devtools-root" data-inspect-devtools="true" :data-theme="theme">
-    <div class="inspector-frame" :style="overlayStyle" />
+    <div v-for="(style, index) in overlayStyles" :key="index" class="inspector-frame" :style="style" />
+    <div
+      class="inspector-frame inspector-frame--hover"
+      :class="{
+        'inspector-frame--add': modifierAction === 'add',
+        'inspector-frame--remove': modifierAction === 'subtract',
+      }"
+      :style="hoverOverlayStyle"
+    />
+    <div class="marquee-rect" :class="{ 'marquee-rect--remove': isMarqueeing && modifierAction === 'subtract' }" :style="marqueeStyle" />
 
     <button
       v-if="sourceLabel"
@@ -64,6 +78,7 @@ const {
           <circle cx="8" cy="8" r="3.4" />
           <path d="M8 1.6v2.2M8 12.2v2.2M1.6 8h2.2M12.2 8h2.2" />
         </svg>
+        <span v-if="selections.length" class="dock-badge" aria-hidden="true">{{ selections.length }}</span>
       </button>
       <button
         class="dock-button"

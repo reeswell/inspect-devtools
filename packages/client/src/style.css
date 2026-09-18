@@ -18,6 +18,8 @@
   --inspect-context: 0, 220, 130;
   --inspect-soft: #e6fff6;
   --inspect-warning: #ffb86b;
+  --inspect-danger: #ff6b64;
+  --inspect-danger-context: 255, 107, 100;
   --inspect-dock-bg: rgba(23, 25, 31, 0.96);
   --inspect-dock-line: rgba(52, 57, 70, 0.42);
   --inspect-shadow: 0 18px 54px rgba(0, 0, 0, 0.42);
@@ -36,6 +38,8 @@
   --inspect-context: 0, 145, 90;
   --inspect-soft: #dcf4e8;
   --inspect-warning: #a35a00;
+  --inspect-danger: #d6453d;
+  --inspect-danger-context: 214, 69, 61;
   --inspect-dock-bg: rgba(255, 255, 255, 0.94);
   --inspect-dock-line: rgba(0, 0, 0, 0.08);
   --inspect-shadow: 0 18px 54px rgba(15, 23, 42, 0.16);
@@ -61,6 +65,7 @@
 }
 
 .dock-button {
+  position: relative;
   display: inline-flex;
   width: 30px;
   height: 30px;
@@ -75,6 +80,24 @@
   outline: 0;
   padding: 0;
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.dock-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--inspect-primary);
+  box-shadow: 0 0 0 2px var(--inspect-dock-bg);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  padding: 0 4px;
+  pointer-events: none;
+  text-align: center;
 }
 
 .dock-button:hover {
@@ -135,6 +158,43 @@
   border: 2px solid var(--inspect-brand);
   background: rgba(var(--inspect-context), 0.08);
   box-shadow: 0 0 0 1px rgba(7, 95, 70, 0.28), 0 0 0 9999px rgba(15, 23, 42, 0.04);
+}
+
+/* 悬停预览框：虚线 + 更浅填充，与已提交的实线框区分 */
+.inspector-frame--hover {
+  border-style: dashed;
+  background: rgba(var(--inspect-context), 0.04);
+}
+
+/* Shift 悬浮加选预览：与点击选中一致的实线绿框，预演“点击即选中” */
+.inspector-frame--add {
+  border-style: solid;
+  background: rgba(var(--inspect-context), 0.08);
+}
+
+/* Alt 悬浮减选预览：警示红框罩在将被移除的条目上，预演“点击即移除” */
+.inspector-frame--remove {
+  border-color: var(--inspect-danger);
+  border-style: solid;
+  background: rgba(var(--inspect-danger-context), 0.08);
+  box-shadow: 0 0 0 1px rgba(var(--inspect-danger-context), 0.3), 0 0 0 9999px rgba(15, 23, 42, 0.04);
+}
+
+/* Alt 拖拽时选框同步变为警示色 */
+.marquee-rect--remove {
+  border-color: var(--inspect-danger);
+  background: rgba(var(--inspect-danger-context), 0.06);
+}
+
+.marquee-rect {
+  position: fixed;
+  z-index: var(--inspect-z-overlay);
+  top: 0;
+  left: 0;
+  display: none;
+  pointer-events: none;
+  border: 1px dashed var(--inspect-brand);
+  background: rgba(var(--inspect-context), 0.06);
 }
 
 .source-badge {
