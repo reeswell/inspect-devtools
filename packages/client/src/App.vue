@@ -67,21 +67,21 @@ const {
 
     <div class="bottom-dock">
       <button
-        class="dock-button"
+        class="dock-button dock-button--inspect"
         type="button"
         :aria-pressed="isInspecting"
         aria-label="Inspect component (Alt+Shift+I)"
         title="Inspect component (Alt+Shift+I)"
         @click="isInspecting ? stopInspecting() : startInspecting()"
       >
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <circle cx="8" cy="8" r="3.4" />
-          <path d="M8 1.6v2.2M8 12.2v2.2M1.6 8h2.2M12.2 8h2.2" />
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 2H3.5A1.5 1.5 0 0 0 2 3.5V6M10 2h2.5A1.5 1.5 0 0 1 14 3.5V6M2 10v2.5A1.5 1.5 0 0 0 3.5 14H6M14 10v2.5a1.5 1.5 0 0 1-1.5 1.5H10" />
+          <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
         </svg>
         <span v-if="selections.length" class="dock-badge" aria-hidden="true">{{ selections.length }}</span>
       </button>
       <button
-        class="dock-button"
+        class="dock-button dock-button--theme"
         type="button"
         :aria-label="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
         :title="theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"

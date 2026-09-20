@@ -51,21 +51,34 @@
   position: fixed;
   z-index: var(--inspect-z-dock);
   bottom: 18px;
-  left: 50%;
+  left: calc(50% - 19px);
   display: flex;
   height: 36px;
+  width: 68px;
   align-items: center;
-  gap: 2px;
-  transform: translateX(-50%);
+  justify-content: flex-start;
+  gap: 0;
+  padding: 3px;
+}
+
+.bottom-dock::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 38px;
   border: 1px solid var(--inspect-dock-line);
   border-radius: 999px;
   background: var(--inspect-dock-bg);
   box-shadow: var(--inspect-shadow);
-  padding: 3px;
+  content: "";
+  transition: width 160ms ease;
 }
 
 .dock-button {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   width: 30px;
   height: 30px;
@@ -80,6 +93,28 @@
   outline: 0;
   padding: 0;
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+/* 主题切换是 inspect 操作的上下文工具，默认收起，悬浮 inspect 时从右侧展开。 */
+.dock-button--theme {
+  width: 0;
+  margin-left: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-6px);
+  transition: width 160ms ease, margin-left 160ms ease, opacity 120ms ease, transform 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.bottom-dock:has(.dock-button--inspect:hover, .dock-button--theme:hover, .dock-button--inspect:focus-visible, .dock-button--theme:focus-visible) .dock-button--theme {
+  width: 30px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.bottom-dock:has(.dock-button--inspect:hover, .dock-button--theme:hover, .dock-button--inspect:focus-visible, .dock-button--theme:focus-visible)::before {
+  width: 68px;
 }
 
 .dock-badge {
@@ -238,7 +273,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dock-button {
+  .dock-button,
+  .dock-button--theme {
+    transition: none;
+  }
+
+  .bottom-dock::before {
     transition: none;
   }
 }

@@ -2,6 +2,11 @@
 
 All notable changes to Inspect Devtools are documented here.
 
+## 0.7.1
+
+- Reveal the theme toggle from the Inspect dock button without shifting the Inspect icon.
+- Refresh the Inspect icon to a four-corner focus frame with a center point.
+
 ## 0.7.0
 
 - Copy now prepends a single `Route:` line before the `@`-mentions, carrying the current pathname, search, and hash (no origin), so coding agents know which page the selection lives on. A route ending with `/` gets a trailing space so pasting into an agent input doesn't trigger slash-command completion. Add a `copyRoute` project option (`true` by default); set it to `false` to keep copies to bare `@`-mentions.
