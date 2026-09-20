@@ -6,13 +6,13 @@ Inspect Devtools 是一个 Vite 开发期插件，用于从浏览器中定位 Re
 
 它适合本地调试，也适合把源码文件引用交给同事、写入 issue，或粘贴给编码助手。
 
-![选中元素即复制 @ 引用，并在编辑器中打开源码](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/inspect.gif)
+![Inspect Devtools 使用流程](./docs/inspect-workflow.png)
 
 ## 环境要求
 
 - Vite `6`、`7` 或 `8`
 - 运行在 Vite serve 模式下的 React 或 Vue 应用
-- 系统环境可被 [`launch-editor`](https://github.com/yyx990803/launch-editor) 识别的本地编辑器，或显式配置编辑器命令
+- 系统环境可被 [`launch-editor`](https://github.com/vitejs/launch-editor) 识别的本地编辑器，或显式配置编辑器命令
 
 ## 安装
 
@@ -80,19 +80,16 @@ plugins: [
 
 dock 中也提供主题切换按钮，选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器对 Vite 默认值的个人覆盖。
 
-![浅色主题下的 dock](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-light.png#gh-light-mode-only)
-![深色主题下的 dock](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-dark.png#gh-dark-mode-only)
-
 `inspectDevtoolsVue` 同样支持该选项。
 
 ### 复制内容附带路由
 
-每次复制开头附带一行 `Route:`，内容为当前页面的 pathname、search 与 hash（不含 origin），AI 据此判断所选元素位于哪个页面、是哪个复用组件的哪个实例，以及该去哪里复现问题。若项目没有路由概念（如组件库 playground），可传入 `copyRoute: false` 保持纯 `@` 引用。
+复制内容默认保持纯 `@` 引用，让 Cursor 等编码助手能直接识别文件。传入 `copyRoute: true` 后，复制内容会附加一行 `Route:`，包含当前页面的 pathname、search 与 hash（不含 origin），帮助 AI 判断所选元素位于哪个页面、是哪个复用组件的哪个实例，以及该去哪里复现问题。
 
 ```ts
 plugins: [
   react(),
-  ...inspectDevtoolsReact({ copyRoute: false }),
+  ...inspectDevtoolsReact({ copyRoute: true }),
 ]
 ```
 

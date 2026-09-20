@@ -6,13 +6,13 @@ Inspect Devtools is a Vite development plugin for locating the source behind a r
 
 It is intended for quick local debugging and for handing a source-file reference to a teammate, issue, or coding agent.
 
-![Select an element to copy its `@` mention and open the source in your editor](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/inspect.gif)
+![Inspect Devtools workflow](./docs/inspect-workflow.png)
 
 ## Requirements
 
 - Vite `6`, `7`, or `8`
 - A React or Vue application running in Vite serve mode
-- A local editor recognized by [`launch-editor`](https://github.com/yyx990803/launch-editor), or an explicit editor command
+- A local editor recognized by [`launch-editor`](https://github.com/vitejs/launch-editor), or an explicit editor command
 
 ## Install
 
@@ -80,19 +80,16 @@ plugins: [
 
 The dock also offers a theme toggle; its choice is stored per project in the browser's `localStorage` as a personal override of the Vite default.
 
-![Dock in the light theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-light.png#gh-light-mode-only)
-![Dock in the dark theme](https://raw.githubusercontent.com/reeswell/inspect-devtools/main/docs/dock-dark.png#gh-dark-mode-only)
-
 The same option is available on `inspectDevtoolsVue`.
 
 ### Route context in copies
 
-Every copy starts with a single `Route:` line holding the current pathname, search, and hash (no origin), so the agent knows which page the selected elements live on—which instance of a reused component you mean, and where to reproduce an issue. Pass `copyRoute: false` to keep copies to bare `@`-mentions, for example in a component-library playground without routing.
+Copies default to a bare `@`-mention so Cursor and other coding agents can recognize the file reference. Pass `copyRoute: true` to append a single `Route:` line holding the current pathname, search, and hash (no origin), so the agent knows which page the selected elements live on—which instance of a reused component you mean, and where to reproduce an issue.
 
 ```ts
 plugins: [
   react(),
-  ...inspectDevtoolsReact({ copyRoute: false }),
+  ...inspectDevtoolsReact({ copyRoute: true }),
 ]
 ```
 
@@ -119,7 +116,7 @@ The same option is available on `inspectDevtoolsVue`.
 4. Refine the selection Photoshop-style without leaving Inspect mode: `Shift+click` or `Shift+drag` adds elements, `Alt+click` (`Option+click` on macOS) or `Alt+drag` removes them—click anywhere inside a highlight frame to remove that entry. Holding `Shift` or `Alt` while hovering previews the outcome: a solid green frame for what will be selected, a red frame over the entry that will be removed (and the marquee turns red while `Alt`-dragging). Every change re-copies the full set of `@`-mentions to the clipboard. The selection persists after Inspect mode exits: as long as highlight frames remain on the page, the hover previews stay live and `Shift+click`/`Alt+click` keep adding and removing (unmodified hovers and clicks are never intercepted); `Escape` clears the selection.
 5. When source metadata is available, selecting automatically copies a reference to the source file. The configured editor opens the file at its exact line and column only when the selection resolves to exactly one file; for multi-file selections, click the source label to open the active entry instead.
 
-Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. A single `Route: /dashboard?tab=overview` line precedes the mentions, naming the page the selection lives on; see [Route context in copies](#route-context-in-copies) to turn it off. For pasting outside AI tools, `copyFormat: 'link'` copies a Markdown link instead—see [Copy format](#copy-format).
+Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. When enabled, `copyRoute: true` appends a `Route: /dashboard?tab=overview` line naming the page the selection lives on. For pasting outside AI tools, `copyFormat: 'link'` copies a Markdown link instead—see [Copy format](#copy-format).
 
 Feedback and errors surface as transient toasts above the dock; when no source file can be resolved for an element, a toast says so instead of copying or opening anything.
 

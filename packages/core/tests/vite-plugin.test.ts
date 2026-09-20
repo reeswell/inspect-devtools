@@ -38,7 +38,7 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('mountInspectDevtools')
     expect(code).toContain('"framework":"react"')
     expect(code).toContain('"theme":"light"')
-    expect(code).toContain('"copyRoute":true')
+    expect(code).toContain('"copyRoute":false')
     expect(code).toContain('"copyFormat":"mention"')
     expect(code).toContain('"projectRoot":"/project"')
   })

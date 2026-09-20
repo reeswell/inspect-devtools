@@ -18,9 +18,9 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(resolveInspectDevtoolsOptions({ theme: 'dark' }).theme).toBe('dark')
   })
 
-  it('defaults copyRoute to true and honors an explicit opt-out', () => {
-    expect(resolveInspectDevtoolsOptions().copyRoute).toBe(true)
-    expect(resolveInspectDevtoolsOptions({ copyRoute: false }).copyRoute).toBe(false)
+  it('defaults copyRoute to false and honors an explicit opt-in', () => {
+    expect(resolveInspectDevtoolsOptions().copyRoute).toBe(false)
+    expect(resolveInspectDevtoolsOptions({ copyRoute: true }).copyRoute).toBe(true)
   })
 
   it('defaults copyFormat to mention and resolves the link format', () => {

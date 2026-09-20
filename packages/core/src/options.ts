@@ -3,6 +3,6 @@ import type { InspectDevtoolsOptions, ResolvedInspectDevtoolsOptions } from './t
 export const resolveInspectDevtoolsOptions = (options: InspectDevtoolsOptions = {}): ResolvedInspectDevtoolsOptions => ({
   openInEditor: options.openInEditor,
   theme: options.theme ?? 'light',
-  copyRoute: options.copyRoute ?? true,
+  copyRoute: options.copyRoute ?? false,
   copyFormat: options.copyFormat ?? 'mention',
 })

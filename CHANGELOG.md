@@ -2,6 +2,11 @@
 
 All notable changes to Inspect Devtools are documented here.
 
+## 0.7.2
+
+- Default `copyRoute` to `false` so copied source references remain plain `@`-mentions that Cursor can recognize as file references; opt in to route context with `copyRoute: true`.
+- Consolidate the documentation visuals into a single Inspect workflow image and update the `launch-editor` link to the Vite repository.
+
 ## 0.7.1
 
 - Reveal the theme toggle from the Inspect dock button without shifting the Inspect icon.
