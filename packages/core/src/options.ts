@@ -2,6 +2,8 @@ import type { InspectDevtoolsOptions, ResolvedInspectDevtoolsOptions } from './t
 
 export const resolveInspectDevtoolsOptions = (options: InspectDevtoolsOptions = {}): ResolvedInspectDevtoolsOptions => ({
   openInEditor: options.openInEditor,
+  editorProtocol: options.editorProtocol ?? 'auto',
+  allowedDirs: options.allowedDirs ?? [],
   theme: options.theme ?? 'light',
   copyRoute: options.copyRoute ?? false,
   copyFormat: options.copyFormat ?? 'mention',

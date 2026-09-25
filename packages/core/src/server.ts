@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { existsSync, realpathSync, statSync } from 'node:fs'
-import { isAbsolute, join, normalize, relative, resolve } from 'node:path'
+import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import launchEditor from 'launch-editor'
 import type { ViteDevServer } from 'vite'
 import { INSPECT_DEVTOOLS_PATH } from './protocol.ts'
@@ -33,6 +33,18 @@ const isSubPath = (base: string, target: string): boolean => {
   return candidate === '' || (!candidate.startsWith('..') && !isAbsolute(candidate))
 }
 
+const findWorkspaceRoot = (root: string): string => {
+  let current = root
+  for (;;) {
+    if (existsSync(join(current, '.git')) || existsSync(join(current, 'pnpm-workspace.yaml')))
+      return current
+    const parent = dirname(current)
+    if (parent === current)
+      return root
+    current = parent
+  }
+}
+
 const cleanInlineReference = (value: string): string => value.trim().replace(/[),;]+$/g, '')
 
 const normalizeRequestedPath = (requestedPath: string, root: string): string => {
@@ -56,18 +68,37 @@ const normalizeRequestedPath = (requestedPath: string, root: string): string => 
   return fsPath
 }
 
-export const resolveProjectFile = (requestedPath: string, root: string): string => {
+export const resolveProjectFile = (
+  requestedPath: string,
+  root: string,
+  allowedDirs: string[] = [],
+): string => {
   const normalizedPath = normalizeRequestedPath(requestedPath, root)
   const projectRoot = realpathSync(root)
+  const workspaceRoot = findWorkspaceRoot(root)
+
+  const safeRoots = [
+    projectRoot,
+    ...(workspaceRoot !== root && existsSync(workspaceRoot) ? [realpathSync(workspaceRoot)] : []),
+    ...allowedDirs
+      .map(dir => (existsSync(dir) ? realpathSync(dir) : null))
+      .filter((dir): dir is string => dir !== null),
+  ]
+
   const candidates = [
     resolve(isAbsolute(normalizedPath) ? normalizedPath : join(root, normalizedPath)),
     resolve(root, normalizedPath.replace(/^\/+/, '')),
   ]
 
+  if (workspaceRoot !== root) {
+    candidates.push(resolve(workspaceRoot, normalizedPath.replace(/^\/+/, '')))
+  }
+
   const path = candidates.find((candidate) => {
     if (!existsSync(candidate) || !statSync(candidate).isFile())
       return false
-    return isSubPath(projectRoot, realpathSync(candidate))
+    const realCandidate = realpathSync(candidate)
+    return safeRoots.some(safeRoot => isSubPath(safeRoot, realCandidate))
   })
   if (!path)
     throw new Error('File is outside the project root or does not exist')
@@ -85,7 +116,7 @@ export const registerInspectDevtoolsServer = ({ server, root, options }: ServerR
         const body = await readBody<{ path?: string, line?: number, column?: number }>(request)
         if (!body.path)
           throw new Error('Missing path')
-        const file = resolveProjectFile(body.path, root)
+        const file = resolveProjectFile(body.path, root, options.allowedDirs)
         const suffix = body.line ? `:${body.line}${body.column ? `:${body.column}` : ''}` : ''
         launchEditor(`${file}${suffix}`, options.openInEditor)
         sendJson(response, 200, { ok: true })

@@ -26,7 +26,7 @@ const reactInspectorSourcePlugin = (): PluginOption => ({
       return
 
     const transformed = transformReactInspectorSource(code, id)
-    return transformed ? { code: transformed, map: null } : undefined
+    return transformed ? { code: transformed.code, map: transformed.map } : undefined
   },
 })
 

@@ -59,6 +59,37 @@
   justify-content: flex-start;
   gap: 0;
   padding: 3px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.bottom-dock--dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
+.bottom-dock--dragging * {
+  pointer-events: none !important;
+}
+
+.bottom-dock--collapsed {
+  width: 38px;
+  justify-content: center;
+}
+
+.bottom-dock--collapsed::before {
+  width: 38px !important;
+}
+
+.dock-button--mini {
+  width: 30px;
+  height: 30px;
+}
+
+.dock-badge--mini {
+  top: -5px;
+  right: -5px;
 }
 
 .bottom-dock::before {

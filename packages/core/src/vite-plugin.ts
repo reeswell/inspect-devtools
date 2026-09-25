@@ -59,6 +59,8 @@ export const createInspectDevtoolsPlugin = ({ framework, clientEntry, clientStyl
           copyLineColumn: resolvedOptions.copyLineColumn,
           openOnClick: resolvedOptions.openOnClick,
           projectRoot,
+          editorProtocol: resolvedOptions.editorProtocol,
+          openInEditor: resolvedOptions.openInEditor,
           endpoints: clientEndpoints(config.base || '/'),
         }
         return [

@@ -2,6 +2,7 @@ import { computed, getCurrentInstance, onUnmounted, shallowRef } from 'vue'
 import type { ClientInspectDevtoolsOptions } from '@inspect-devtools/core'
 import { createGrabSelection, getReactDebugSource, getVueInspectorSource, type GrabSelection } from '@inspect-devtools/core/browser'
 import { formatRouteLocation, formatSelectionLocation } from './selection-location'
+import { formatEditorProtocolUrl, openViaUrlScheme } from './open-editor'
 import { useRpc } from './useRpc'
 
 const isDevtoolsElement = (element: EventTarget | null): boolean => {
@@ -136,12 +137,30 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       pressedModifiers.value = { shift: event.shiftKey, alt: event.altKey }
   }
 
+  const refreshViewport = () => {
+    viewportVersion.value += 1
+  }
+
+  let resizeObserver: ResizeObserver | undefined
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      refreshViewport()
+    })
+  }
+
   const getEntries = (): SelectionEntry[] =>
     selections.value.map((selection, index) => ({ element: selectedElements.value[index], selection }))
 
   const setEntries = (entries: SelectionEntry[]) => {
     selectedElements.value = entries.map(entry => entry.element)
     selections.value = entries.map(entry => entry.selection)
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+      for (const entry of entries) {
+        if (entry.element instanceof Element)
+          resizeObserver.observe(entry.element)
+      }
+    }
   }
 
   const getElementDepth = (element: Element) => {
@@ -244,9 +263,19 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     if (!currentSelection)
       return null
 
+    let hint = 'Source unresolved'
+    if (currentSelection.filePath) {
+      if (isInspecting.value) {
+        hint = clientOptions.openOnClick ? 'Click to open in editor' : 'Click to copy source'
+      }
+      else {
+        hint = 'Click badge to open in editor'
+      }
+    }
+
     return {
       label: formatSourceLabel(currentSelection),
-      hint: currentSelection.filePath ? 'Click to open in editor' : 'Source unresolved',
+      hint,
       canOpen: Boolean(currentSelection.filePath),
     }
   })
@@ -332,8 +361,28 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     showFeedback('Opening in editor…')
     isOpening.value = true
     try {
-      await rpc.openInEditor(currentSelection.filePath, currentSelection.line, currentSelection.column)
-      showFeedback('Opened in editor')
+      const protocol = clientOptions.editorProtocol
+      if (protocol === 'vscode' || protocol === 'cursor' || protocol === 'webstorm') {
+        const url = formatEditorProtocolUrl(protocol, currentSelection.filePath, currentSelection.line, currentSelection.column)
+        openViaUrlScheme(url)
+        showFeedback(`Opened in ${protocol}`)
+        return
+      }
+
+      try {
+        await rpc.openInEditor(currentSelection.filePath, currentSelection.line, currentSelection.column)
+        showFeedback('Opened in editor')
+      }
+      catch (error) {
+        if (protocol === 'auto' && (clientOptions.openInEditor === 'cursor' || clientOptions.openInEditor === 'code' || clientOptions.openInEditor === 'vscode')) {
+          const fallbackProto = clientOptions.openInEditor === 'cursor' ? 'cursor' : 'vscode'
+          const url = formatEditorProtocolUrl(fallbackProto, currentSelection.filePath, currentSelection.line, currentSelection.column)
+          openViaUrlScheme(url)
+          showFeedback(`Opened in ${fallbackProto}`)
+          return
+        }
+        throw error
+      }
     }
     catch (error) {
       showFeedback('')
@@ -591,10 +640,6 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     clearNotices()
   }
 
-  const refreshViewport = () => {
-    viewportVersion.value += 1
-  }
-
   const onKeyDown = (event: KeyboardEvent) => {
     syncModifiers(event)
     const action = getInspectorShortcutAction(event)
@@ -624,6 +669,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const dispose = () => {
     clearTimeout(feedbackTimer)
     clearTimeout(errorTimer)
+    resizeObserver?.disconnect()
     window.removeEventListener('pointerdown', onPointerDown, true)
     window.removeEventListener('pointermove', onPointerMove, true)
     window.removeEventListener('pointerup', onPointerUp, true)

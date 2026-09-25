@@ -119,10 +119,15 @@ describe('useInspector', () => {
       endpoints: { openInEditor: '/__inspect-devtools__/open-in-editor' },
     }))
     inspector.startInspecting()
-    document.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    const button = document.querySelector('button')!
+    dispatchPointer(button, 'pointermove', 10, 10)
+    expect(inspector.sourceLabel.value?.hint).toBe('Click to copy source')
+
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
+    expect(inspector.sourceLabel.value?.hint).toBe('Click badge to open in editor')
     expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx')
     expect(fetch).not.toHaveBeenCalled()
 
@@ -132,6 +137,19 @@ describe('useInspector', () => {
       method: 'POST',
       body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
     }))
+    inspector.dispose()
+  })
+
+  it('shows Click to open in editor when inspecting with openOnClick enabled', () => {
+    document.body.innerHTML = '<button data-inspect-devtools-source="/project/src/App.tsx:8:5">Save</button>'
+    const inspector = useInspector(createClientOptions({
+      framework: 'react',
+      openOnClick: true,
+    }))
+    inspector.startInspecting()
+    const button = document.querySelector('button')!
+    dispatchPointer(button, 'pointermove', 10, 10)
+    expect(inspector.sourceLabel.value?.hint).toBe('Click to open in editor')
     inspector.dispose()
   })
 

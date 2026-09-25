@@ -13,9 +13,11 @@ export const MetricCard = () => (
 
     const transformed = transformReactInspectorSource(code, '/project/src/main.tsx')!
 
-    expect(transformed).toContain('data-inspect-devtools-source="/project/src/main.tsx:3:3"')
-    expect(transformed).toContain('data-inspect-devtools-component="MetricCard"')
-    expect(transformed).toContain('data-inspect-devtools-source="/project/src/main.tsx:4:5"')
+    expect(transformed.code).toContain('data-inspect-devtools-source="/project/src/main.tsx:3:3"')
+    expect(transformed.code).toContain('data-inspect-devtools-component="MetricCard"')
+    expect(transformed.code).toContain('data-inspect-devtools-source="/project/src/main.tsx:4:5"')
+    expect(transformed.map).toBeDefined()
+    expect(transformed.map.sources).toContain('/project/src/main.tsx')
   })
 
   it('does not add source metadata to component tags', () => {
@@ -29,7 +31,8 @@ export const MetricCard = () => (
 
     const transformed = transformReactInspectorSource(code, '/project/src/main.tsx')!
 
-    expect(transformed).toContain('data-inspect-devtools-source="custom:1:1"')
-    expect(transformed).not.toContain('data-inspect-devtools-source="/project/src/main.tsx')
+    expect(transformed.code).toContain('data-inspect-devtools-source="custom:1:1"')
+    expect(transformed.code).not.toContain('data-inspect-devtools-source="/project/src/main.tsx')
+    expect(transformed.map).toBeDefined()
   })
 })

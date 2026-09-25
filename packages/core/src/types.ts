@@ -3,9 +3,12 @@ export type InspectDevtoolsFramework = 'react' | 'vue'
 export type CopyFormat = 'mention' | 'link'
 export type CopyLineColumn = boolean | 'line' | 'column'
 export type InspectDevtoolsTheme = 'dark' | 'light'
+export type EditorProtocol = 'auto' | 'server' | 'vscode' | 'cursor' | 'webstorm' | 'custom'
 
 export interface InspectDevtoolsOptions {
   openInEditor?: string
+  editorProtocol?: EditorProtocol
+  allowedDirs?: string[]
   theme?: InspectDevtoolsTheme
   copyRoute?: boolean
   copyFormat?: CopyFormat
@@ -15,6 +18,8 @@ export interface InspectDevtoolsOptions {
 
 export interface ResolvedInspectDevtoolsOptions {
   openInEditor?: string
+  editorProtocol: EditorProtocol
+  allowedDirs: string[]
   theme: InspectDevtoolsTheme
   copyRoute: boolean
   copyFormat: CopyFormat
@@ -30,6 +35,8 @@ export interface ClientInspectDevtoolsOptions {
   copyLineColumn: CopyLineColumn
   openOnClick: boolean
   projectRoot: string
+  editorProtocol: EditorProtocol
+  openInEditor?: string
   endpoints: {
     openInEditor: string
   }

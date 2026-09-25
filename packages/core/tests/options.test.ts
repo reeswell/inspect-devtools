@@ -39,4 +39,15 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(resolveInspectDevtoolsOptions().openOnClick).toBe(true)
     expect(resolveInspectDevtoolsOptions({ openOnClick: false }).openOnClick).toBe(false)
   })
+
+  it('defaults editorProtocol to auto and honors configured protocols', () => {
+    expect(resolveInspectDevtoolsOptions().editorProtocol).toBe('auto')
+    expect(resolveInspectDevtoolsOptions({ editorProtocol: 'cursor' }).editorProtocol).toBe('cursor')
+    expect(resolveInspectDevtoolsOptions({ editorProtocol: 'vscode' }).editorProtocol).toBe('vscode')
+  })
+
+  it('defaults allowedDirs to empty array and resolves configured allowedDirs', () => {
+    expect(resolveInspectDevtoolsOptions().allowedDirs).toEqual([])
+    expect(resolveInspectDevtoolsOptions({ allowedDirs: ['/custom/path'] }).allowedDirs).toEqual(['/custom/path'])
+  })
 })

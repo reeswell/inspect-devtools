@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs'
 import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -40,5 +41,32 @@ describe('server utilities', () => {
     await symlink(outside, join(root, 'src', 'secret.ts'))
 
     expect(() => resolveProjectFile('src/secret.ts', root)).toThrow('outside')
+  })
+
+  it('allows symlinks when target directory is in allowedDirs', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'inspect-devtools-link-allowed-'))
+    const outsideDir = await mkdtemp(join(tmpdir(), 'inspect-devtools-outside-allowed-'))
+    const outside = join(outsideDir, 'shared.ts')
+    await mkdir(join(root, 'src'), { recursive: true })
+    await writeFile(outside, 'export const shared = true')
+    await symlink(outside, join(root, 'src', 'shared.ts'))
+
+    const resolved = resolveProjectFile('src/shared.ts', root, [outsideDir])
+    expect(resolved).toBe(realpathSync(outside))
+  })
+
+  it('allows resolving files when located inside workspace root', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'inspect-devtools-ws-'))
+    await mkdir(join(workspaceRoot, '.git'), { recursive: true })
+    const packageRoot = join(workspaceRoot, 'packages', 'app')
+    const sharedPackage = join(workspaceRoot, 'packages', 'ui')
+    await mkdir(join(packageRoot, 'src'), { recursive: true })
+    await mkdir(join(sharedPackage, 'src'), { recursive: true })
+
+    const uiFile = join(sharedPackage, 'src', 'button.tsx')
+    await writeFile(uiFile, 'export const Button = () => null')
+
+    const resolved = resolveProjectFile('packages/ui/src/button.tsx', packageRoot)
+    expect(resolved).toBe(realpathSync(uiFile))
   })
 })

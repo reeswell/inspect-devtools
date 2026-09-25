@@ -38,7 +38,12 @@ const findComponentName = (path: NodePath<t.JSXOpeningElement>): string | undefi
   return undefined
 }
 
-export const transformReactInspectorSource = (code: string, id: string): string | undefined => {
+export interface TransformResult {
+  code: string
+  map?: any
+}
+
+export const transformReactInspectorSource = (code: string, id: string): TransformResult | undefined => {
   const [filename] = id.split('?', 2)
   if (!JSX_RE.test(filename) || filename.includes('/node_modules/'))
     return undefined
@@ -78,5 +83,15 @@ export const transformReactInspectorSource = (code: string, id: string): string 
   if (!changed)
     return undefined
 
-  return generateCode(ast, { retainLines: true }, code).code
+  const result = generateCode(ast, {
+    sourceMaps: true,
+    sourceFileName: filename,
+    retainLines: true,
+  }, code)
+
+  return {
+    code: result.code,
+    map: result.map,
+  }
 }
+
