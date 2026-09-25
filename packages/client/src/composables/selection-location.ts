@@ -1,4 +1,4 @@
-import type { CopyFormat } from '@inspect-devtools/core'
+import type { CopyFormat, CopyLineColumn } from '@inspect-devtools/core'
 import type { GrabSelection } from '@inspect-devtools/core/browser'
 
 const escapeLinkText = (value: string): string => value
@@ -11,22 +11,38 @@ const escapeLinkDestination = (value: string): string => value
   .replaceAll('(', '\\(')
   .replaceAll(')', '\\)')
 
-export const formatSelectionLocation = (selection: GrabSelection, format: CopyFormat = 'mention', projectRoot?: string): string | undefined => {
+const formatLocationSuffix = (selection: GrabSelection, copyLineColumn: CopyLineColumn): string => {
+  if (!copyLineColumn || !selection.line)
+    return ''
+
+  if (copyLineColumn === 'line')
+    return `:${selection.line}`
+
+  return `:${selection.line}${selection.column ? `:${selection.column}` : ''}`
+}
+
+export const formatSelectionLocation = (
+  selection: GrabSelection,
+  format: CopyFormat = 'mention',
+  projectRoot?: string,
+  copyLineColumn: CopyLineColumn = false,
+): string | undefined => {
   if (!selection.filePath)
     return undefined
 
   const filePath = selection.filePath.replace(/\\/g, '/')
+  const suffix = formatLocationSuffix(selection, copyLineColumn)
 
   if (format === 'link') {
     const fileName = filePath.split('/').filter(Boolean).at(-1) || filePath
-    return `[${escapeLinkText(fileName)}](${escapeLinkDestination(filePath)})`
+    return `[${escapeLinkText(`${fileName}${suffix}`)}](${escapeLinkDestination(`${filePath}${suffix}`)})`
   }
 
   const root = projectRoot?.replace(/\\/g, '/').replace(/\/+$/, '')
   const relativePath = root && (filePath === root || filePath.startsWith(`${root}/`))
     ? filePath.slice(root.length).replace(/^\/+/, '')
     : filePath
-  return `@${relativePath}`
+  return `@${relativePath}${suffix}`
 }
 
 // 只取 pathname + search + hash：框架无关（history/hash 路由均覆盖），origin 在本地开发中是恒定噪音。

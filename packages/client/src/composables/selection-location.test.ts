@@ -53,6 +53,51 @@ describe('formatSelectionLocation', () => {
         filePath: 'C:\\workspace\\app\\src\\App.vue',
       }, 'mention', 'C:\\workspace\\app\\')).toBe('@src/App.vue')
     })
+
+    it('formats a project-relative @ mention with line and column numbers when enabled', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+        column: 7,
+      }, 'mention', '/project', true)).toBe('@src/App.tsx:12:7')
+
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+        column: 7,
+      }, 'mention', '/project', 'column')).toBe('@src/App.tsx:12:7')
+    })
+
+    it('formats a project-relative @ mention with only line number when copyLineColumn is line', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+        column: 7,
+      }, 'mention', '/project', 'line')).toBe('@src/App.tsx:12')
+    })
+
+    it('omits column when column is unavailable even if copyLineColumn is true', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+      }, 'mention', '/project', true)).toBe('@src/App.tsx:12')
+    })
+
+    it('omits line and column suffix when line is unavailable even if copyLineColumn is true', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+      }, 'mention', '/project', true)).toBe('@src/App.tsx')
+    })
   })
 
   describe('link format', () => {
@@ -64,6 +109,24 @@ describe('formatSelectionLocation', () => {
         line: 12,
         column: 7,
       }, 'link')).toBe('[App.tsx](/project/src/App.tsx)')
+    })
+
+    it('formats a Markdown link with line and column numbers when enabled', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+        column: 7,
+      }, 'link', '/project', true)).toBe('[App.tsx:12:7](/project/src/App.tsx:12:7)')
+
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'button',
+        filePath: '/project/src/App.tsx',
+        line: 12,
+        column: 7,
+      }, 'link', '/project', 'line')).toBe('[App.tsx:12](/project/src/App.tsx:12)')
     })
 
     it('formats a Vue file path', () => {

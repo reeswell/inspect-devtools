@@ -1,6 +1,7 @@
 export type InspectDevtoolsFramework = 'react' | 'vue'
 // 'mention' 是 @ 引用（Cursor、Claude Code 等可解析）；'link' 是标准 Markdown 链接，面向非 AI 的粘贴目的地
 export type CopyFormat = 'mention' | 'link'
+export type CopyLineColumn = boolean | 'line' | 'column'
 export type InspectDevtoolsTheme = 'dark' | 'light'
 
 export interface InspectDevtoolsOptions {
@@ -8,6 +9,8 @@ export interface InspectDevtoolsOptions {
   theme?: InspectDevtoolsTheme
   copyRoute?: boolean
   copyFormat?: CopyFormat
+  copyLineColumn?: CopyLineColumn
+  openOnClick?: boolean
 }
 
 export interface ResolvedInspectDevtoolsOptions {
@@ -15,6 +18,8 @@ export interface ResolvedInspectDevtoolsOptions {
   theme: InspectDevtoolsTheme
   copyRoute: boolean
   copyFormat: CopyFormat
+  copyLineColumn: CopyLineColumn
+  openOnClick: boolean
 }
 
 export interface ClientInspectDevtoolsOptions {
@@ -22,6 +27,8 @@ export interface ClientInspectDevtoolsOptions {
   theme: InspectDevtoolsTheme
   copyRoute: boolean
   copyFormat: CopyFormat
+  copyLineColumn: CopyLineColumn
+  openOnClick: boolean
   projectRoot: string
   endpoints: {
     openInEditor: string

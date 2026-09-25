@@ -27,4 +27,16 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(resolveInspectDevtoolsOptions().copyFormat).toBe('mention')
     expect(resolveInspectDevtoolsOptions({ copyFormat: 'link' }).copyFormat).toBe('link')
   })
+
+  it('defaults copyLineColumn to false and resolves boolean and granularity values', () => {
+    expect(resolveInspectDevtoolsOptions().copyLineColumn).toBe(false)
+    expect(resolveInspectDevtoolsOptions({ copyLineColumn: true }).copyLineColumn).toBe(true)
+    expect(resolveInspectDevtoolsOptions({ copyLineColumn: 'line' }).copyLineColumn).toBe('line')
+    expect(resolveInspectDevtoolsOptions({ copyLineColumn: 'column' }).copyLineColumn).toBe('column')
+  })
+
+  it('defaults openOnClick to true and honors an explicit opt-out', () => {
+    expect(resolveInspectDevtoolsOptions().openOnClick).toBe(true)
+    expect(resolveInspectDevtoolsOptions({ openOnClick: false }).openOnClick).toBe(false)
+  })
 })

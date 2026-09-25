@@ -40,6 +40,8 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('"theme":"light"')
     expect(code).toContain('"copyRoute":false')
     expect(code).toContain('"copyFormat":"mention"')
+    expect(code).toContain('"copyLineColumn":false')
+    expect(code).toContain('"openOnClick":true')
     expect(code).toContain('"projectRoot":"/project"')
   })
 
@@ -85,6 +87,33 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('"copyFormat":"link"')
   })
 
+  it('passes the copyLineColumn option to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { copyLineColumn: true },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"copyLineColumn":true')
+  })
+
+  it('passes the openOnClick option to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { openOnClick: false },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"openOnClick":false')
+  })
 
   it('resolves the client project root to the repository root of a monorepo package', async () => {
     const repoRoot = await mkdtemp(join(tmpdir(), 'inspect-devtools-repo-'))

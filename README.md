@@ -108,15 +108,41 @@ plugins: [
 
 The same option is available on `inspectDevtoolsVue`.
 
+### Copy line and column
+
+Copied references omit line and column numbers by default (`copyLineColumn: false`). Pass `copyLineColumn: true` (or `'column'`) to append `:line:column` to copied references (e.g., `@src/App.vue:15:3` or `[App.vue:15:3](/path/App.vue:15:3)`). Pass `copyLineColumn: 'line'` if you only want the line number appended.
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ copyLineColumn: true }),
+]
+```
+
+The same option is available on `inspectDevtoolsVue`.
+
+### Open editor on click
+
+Selecting an element automatically opens your local editor by default (`openOnClick: true`). If you prefer only copying the source reference without switching window focus to your editor, pass `openOnClick: false`. You can still click the hovering source badge at any time to open the file manually.
+
+```ts
+plugins: [
+  react(),
+  ...inspectDevtoolsReact({ openOnClick: false }),
+]
+```
+
+The same option is available on `inspectDevtoolsVue`.
+
 ## Workflow
 
 1. Start the Vite dev server.
 2. Press `Alt+Shift+I` or click the crosshair button in the bottom dock. The crosshair button shows a badge with the current selection count.
 3. Hover an element to preview its source label, then click the element to select it. Drag a marquee to select several elements at once: every matched element gets its own highlight frame, and `@`-mentions are deduplicated per source file at copy time, one per line.
 4. Refine the selection Photoshop-style without leaving Inspect mode: `Shift+click` or `Shift+drag` adds elements, `Alt+click` (`Option+click` on macOS) or `Alt+drag` removes them—click anywhere inside a highlight frame to remove that entry. Holding `Shift` or `Alt` while hovering previews the outcome: a solid green frame for what will be selected, a red frame over the entry that will be removed (and the marquee turns red while `Alt`-dragging). Every change re-copies the full set of `@`-mentions to the clipboard. The selection persists after Inspect mode exits: as long as highlight frames remain on the page, the hover previews stay live and `Shift+click`/`Alt+click` keep adding and removing (unmodified hovers and clicks are never intercepted); `Escape` clears the selection.
-5. When source metadata is available, selecting automatically copies a reference to the source file. The configured editor opens the file at its exact line and column only when the selection resolves to exactly one file; for multi-file selections, click the source label to open the active entry instead.
+5. When source metadata is available, selecting automatically copies a reference to the source file. When `openOnClick: true` (default) is enabled and the selection resolves to exactly one file, the configured editor opens the file at its exact line and column; when `openOnClick: false` or in multi-file selections, click the source label to open the active entry instead.
 
-Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. It deliberately omits line and column information; those remain available to the editor-opening action for precise navigation. When enabled, `copyRoute: true` appends a `Route: /dashboard?tab=overview` line naming the page the selection lives on. For pasting outside AI tools, `copyFormat: 'link'` copies a Markdown link instead—see [Copy format](#copy-format).
+Copy produces an `@`-mention of the file relative to the repository root, such as `@playgrounds/vue/src/App.vue` (or `@/absolute/path/App.vue` when the file lives outside the repository)—a shape understood by Cursor, Claude Code, and other coding agents. Line and column numbers are omitted by default and can be included with `copyLineColumn: true`. When enabled, `copyRoute: true` appends a `Route: /dashboard?tab=overview` line naming the page the selection lives on. For pasting outside AI tools, `copyFormat: 'link'` copies a Markdown link instead—see [Copy format](#copy-format).
 
 Feedback and errors surface as transient toasts above the dock; when no source file can be resolved for an element, a toast says so instead of copying or opening anything.
 

@@ -345,7 +345,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const copySelectionLocation = async () => {
     const locations = [...new Set(
       selections.value
-        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot))
+        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn))
         .filter((location): location is string => Boolean(location)),
     )]
     if (!locations.length)
@@ -495,8 +495,8 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     isInspecting.value = false
     clearHover()
     await copySelectionLocation()
-    // 自动打开只在选择无歧义（恰好解析到一个文件）时发生；多文件交给 source badge 显式打开
-    if (new Set(entries.map(entry => entry.selection.filePath)).size === 1)
+    // 自动打开只在选择无歧义（恰好解析到一个文件）且 openOnClick 为 true 时发生；多文件交给 source badge 显式打开
+    if (clientOptions.openOnClick && new Set(entries.map(entry => entry.selection.filePath)).size === 1)
       await openSelectionInEditor(entries[0].selection)
   }
 
@@ -568,7 +568,8 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       return
     }
     await copySelectionLocation()
-    await openSelectionInEditor(nextSelection)
+    if (clientOptions.openOnClick)
+      await openSelectionInEditor(nextSelection)
   }
 
   const startInspecting = () => {

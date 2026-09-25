@@ -7,6 +7,8 @@ const createClientOptions = (overrides: Partial<ClientInspectDevtoolsOptions> = 
   theme: 'light',
   copyRoute: true,
   copyFormat: 'mention',
+  copyLineColumn: false,
+  openOnClick: true,
   projectRoot: '/project',
   endpoints: { openInEditor: '/open' },
   ...overrides,
@@ -80,6 +82,52 @@ describe('useInspector', () => {
 
     expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
     expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx')
+    expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
+    }))
+    inspector.dispose()
+  })
+
+  it('selects an element, copies location with line and column when copyLineColumn is enabled', async () => {
+    const writeText = stubClipboard()
+    document.body.innerHTML = '<button data-inspect-devtools-source="/project/src/App.tsx:8:5">Save</button>'
+
+    const inspector = useInspector(createClientOptions({
+      framework: 'react',
+      copyLineColumn: true,
+      openOnClick: false,
+    }))
+    inspector.startInspecting()
+    document.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
+    expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx:8:5')
+    inspector.dispose()
+  })
+
+  it('copies location without opening the editor when openOnClick is false, but allows manual open', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
+    vi.stubGlobal('fetch', fetch)
+    const writeText = stubClipboard()
+    document.body.innerHTML = '<button data-inspect-devtools-source="/project/src/App.tsx:8:5">Save</button>'
+
+    const inspector = useInspector(createClientOptions({
+      framework: 'react',
+      openOnClick: false,
+      endpoints: { openInEditor: '/__inspect-devtools__/open-in-editor' },
+    }))
+    inspector.startInspecting()
+    document.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
+    expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx')
+    expect(fetch).not.toHaveBeenCalled()
+
+    // Manually open via active selection
+    await inspector.openActiveSelectionInEditor()
     expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
       method: 'POST',
       body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
