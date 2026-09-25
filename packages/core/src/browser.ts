@@ -1,6 +1,10 @@
-import type { InspectDevtoolsFramework, GrabSelection, ComponentHierarchyItem } from './types.ts'
+import type { InspectDevtoolsFramework, GrabSelection, ComponentHierarchyItem, ComponentAIContextSnapshot } from './types.ts'
 
-export type { GrabSelection, ComponentHierarchyItem }
+export type { GrabSelection, ComponentHierarchyItem, ComponentAIContextSnapshot }
+export {
+  createAIContextSnapshot,
+  formatAIContextMarkdown,
+} from './ai-context.ts'
 
 interface ReactDebugSource {
   fileName?: string
@@ -19,6 +23,7 @@ interface ReactFiberLike {
   _debugSource?: ReactDebugSource | null
   _debugStack?: { stack?: string } | string | null
 }
+
 
 const NON_COMPONENT_PREFIXES = ['_', '$', 'motion.', 'styled.', 'chakra.', 'ark.', 'Primitive.', 'Slot.']
 const INTERNAL_COMPONENT_NAMES = new Set([

@@ -78,6 +78,8 @@ const {
   sourceLabel,
   startInspecting,
   stopInspecting,
+  copyCurrentAIContext,
+  copyCurrentVisualCrop,
 } = inspector
 
 </script>
@@ -120,15 +122,43 @@ const {
         </button>
       </nav>
 
-      <button
-        class="source-badge"
-        type="button"
-        :title="sourceLabel.hint"
-        @click="openActiveSelectionInEditor()"
-      >
-        <strong>{{ sourceLabel.label }}</strong>
-        <span>{{ sourceLabel.hint }}</span>
-      </button>
+      <div class="source-badge-row">
+        <button
+          class="source-badge"
+          type="button"
+          :title="sourceLabel.hint"
+          @click="openActiveSelectionInEditor()"
+        >
+          <strong>{{ sourceLabel.label }}</strong>
+          <span>{{ sourceLabel.hint }}</span>
+        </button>
+
+        <div v-if="!isInspecting" class="source-badge-actions">
+          <button
+            class="source-badge-action-btn"
+            type="button"
+            title="Copy rich AI prompt context (Cmd+Alt+C / Ctrl+Alt+C)"
+            aria-label="Copy rich AI context"
+            @click.stop="copyCurrentAIContext()"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M7.5 0.5l1.5 5 5 1.5-5 1.5-1.5 5-1.5-5-5-1.5 5-1.5 1.5-5zM2 12l0.7 2.3 2.3 0.7-2.3 0.7-0.7 2.3-0.7-2.3-2.3-0.7 2.3-0.7 0.7-2.3z" />
+            </svg>
+          </button>
+          <button
+            class="source-badge-action-btn"
+            type="button"
+            title="Copy component screenshot to clipboard (Cmd+Shift+C / Ctrl+Shift+C)"
+            aria-label="Copy component screenshot"
+            @click.stop="copyCurrentVisualCrop()"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2.5 5.5h2l1-2h5l1 2h2a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 13v-6a1.5 1.5 0 0 1 1.5-1.5z" />
+              <circle cx="8" cy="9.5" r="2.5" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="toast-stack" aria-live="polite">

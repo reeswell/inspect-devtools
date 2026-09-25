@@ -1,4 +1,5 @@
-import type { GrabSelection } from '@inspect-devtools/core'
+import type { ComponentAIContextSnapshot, GrabSelection } from '@inspect-devtools/core'
+import { formatAIContextMarkdown } from '@inspect-devtools/core/browser'
 
 export const formatSourceLabel = (selection: GrabSelection): string => {
   const componentPrefix = selection.componentName ? `<${selection.componentName}> ` : ''
@@ -41,3 +42,9 @@ export const copyText = async (text: string): Promise<void> => {
     textarea.remove()
   }
 }
+
+export const copyAIContext = async (snapshot: ComponentAIContextSnapshot): Promise<void> => {
+  const markdown = formatAIContextMarkdown(snapshot)
+  await copyText(markdown)
+}
+

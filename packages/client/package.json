@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@inspect-devtools/core": "workspace:*",
+    "html-to-image": "^1.11.13",
     "vue": "^3.5.22"
   },
   "devDependencies": {

@@ -59,3 +59,13 @@ export interface GrabSelection {
   cssSelector?: string
   hierarchy?: ComponentHierarchyItem[]
 }
+
+export interface ComponentAIContextSnapshot {
+  componentName?: string
+  filePath?: string
+  line?: number
+  column?: number
+  route: string
+  hierarchy?: ComponentHierarchyItem[]
+}
+

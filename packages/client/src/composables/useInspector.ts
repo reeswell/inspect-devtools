@@ -1,6 +1,7 @@
 import { computed, getCurrentInstance, onUnmounted, shallowRef } from 'vue'
 import type { ClientInspectDevtoolsOptions, GrabSelection } from '@inspect-devtools/core'
 import {
+  createAIContextSnapshot,
   createGrabSelection,
   getComponentRootElements,
   getEventTargetElement,
@@ -12,16 +13,12 @@ import { formatEditorProtocolUrl, openViaUrlScheme } from './open-editor'
 import { useRpc } from './useRpc'
 import { DRAG_THRESHOLD, ERROR_TIMEOUT, FEEDBACK_TIMEOUT } from './constants'
 import type { MarqueeMode, MarqueeRect, SelectionEntry, UseInspectorOptions } from './types'
-import {
-  composedContains,
-  getElementDepth,
-  isDevtoolsElement,
-  isEditableTarget,
-} from './dom'
+import { composedContains, getElementDepth, isDevtoolsElement, isEditableTarget } from './dom'
 import { collectMarqueeEntries } from './marquee'
 import { getClickSelectionAction, getInspectorShortcutAction } from './keyboard'
-import { copyText, formatSourceLabel } from './clipboard'
-import { computeLabelStyle, toFrameStyle, toMarqueeStyle } from './overlay'
+import { copyAIContext, copyText } from './clipboard'
+import { computeLabelStyle, computeSourceLabel, toFrameStyle, toMarqueeStyle } from './overlay'
+import { captureElementToBlob, copyImageBlobToClipboard } from './visualCrop'
 
 export { composedContains, getParentOrShadowHost, isDevtoolsElement, isEditableTarget } from './dom'
 export { getClickSelectionAction, getInspectorShortcutAction } from './keyboard'
@@ -140,15 +137,13 @@ export const useInspector = (
   const showFeedback = (message: string) => {
     feedback.value = message
     clearTimeout(feedbackTimer)
-    if (message)
-      feedbackTimer = setTimeout(() => { feedback.value = '' }, FEEDBACK_TIMEOUT)
+    if (message) feedbackTimer = setTimeout(() => { feedback.value = '' }, FEEDBACK_TIMEOUT)
   }
 
   const showError = (message: string) => {
     lastError.value = message
     clearTimeout(errorTimer)
-    if (message)
-      errorTimer = setTimeout(() => { lastError.value = '' }, ERROR_TIMEOUT)
+    if (message) errorTimer = setTimeout(() => { lastError.value = '' }, ERROR_TIMEOUT)
   }
 
   const clearNotices = () => {
@@ -186,38 +181,14 @@ export const useInspector = (
     return toMarqueeStyle(marqueeRect.value)
   })
 
-  const sourceLabel = computed(() => {
-    const currentSelection = activeSelection.value
-    if (!currentSelection)
-      return null
-
-    const isMac = typeof navigator !== 'undefined'
-      && (/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || '') || /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || ''))
-    const modKey = isMac ? 'Cmd' : 'Ctrl'
-
-    let hint = 'Source unresolved'
-    if (currentSelection.filePath) {
-      if (isInspecting.value) {
-        hint = clientOptions.openOnClick
-          ? 'Click to open in editor'
-          : `Click to select · ${modKey}+Click to open`
-      }
-      else {
-        hint = currentSelection.hierarchy && currentSelection.hierarchy.length > 1
-          ? 'Click badge or Enter to open in editor · ↑/↓ navigate'
-          : 'Click badge to open in editor'
-      }
-    }
-
-    return {
-      label: formatSourceLabel(currentSelection),
-      componentName: currentSelection.componentName,
-      hint,
-      canOpen: Boolean(currentSelection.filePath),
-      hierarchy: currentSelection.hierarchy,
+  const sourceLabel = computed(() =>
+    computeSourceLabel(activeSelection.value, {
+      isInspecting: isInspecting.value,
+      openOnClick: clientOptions.openOnClick,
       activeHierarchyIndex: activeHierarchyIndex.value,
-    }
-  })
+    }),
+  )
+
 
   const labelStyle = computed(() => {
     viewportVersion.value
@@ -340,6 +311,60 @@ export const useInspector = (
     catch (error) {
       showFeedback('')
       showError(error instanceof Error ? error.message : 'Unable to copy path')
+    }
+  }
+
+  const copyCurrentAIContext = async () => {
+    const element = selectedElements.value[0] ?? hoveredElement.value ?? null
+    const currentSelection = activeSelection.value
+    if (!element || !currentSelection) {
+      showError('No element selected for AI context')
+      return
+    }
+
+    showError('')
+    try {
+      const snapshot = createAIContextSnapshot(element, currentSelection)
+      await copyAIContext(snapshot)
+      showFeedback('Copied rich AI context')
+    }
+    catch (error) {
+      showFeedback('')
+      showError(error instanceof Error ? error.message : 'Unable to copy AI context')
+    }
+  }
+
+  const copyCurrentVisualCrop = async () => {
+    const elements = selectedElements.value.length
+      ? selectedElements.value
+      : (hoveredElement.value ? [hoveredElement.value] : [])
+    if (!elements.length) {
+      showError('No element selected for screenshot')
+      return
+    }
+
+    showError('')
+    try {
+      const active = activeSelection.value ?? selections.value[0]
+      const sourceText = active?.filePath
+        ? formatSelectionLocation(active, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn || true)
+        : undefined
+
+      const blob = await captureElementToBlob(elements)
+      if (!blob) {
+        showError('Unable to capture screenshot')
+        return
+      }
+
+      const copied = await copyImageBlobToClipboard(blob, sourceText)
+      if (copied)
+        showFeedback('Copied component screenshot')
+      else
+        showError('Clipboard image copy not supported')
+    }
+    catch (error) {
+      showFeedback('')
+      showError(error instanceof Error ? error.message : 'Failed to capture screenshot')
     }
   }
 
@@ -613,6 +638,20 @@ export const useInspector = (
       isInspecting.value ? stopInspecting() : startInspecting()
       return
     }
+    if (action === 'copy-ai-context') {
+      if (selections.value.length || hoveredElement.value) {
+        event.preventDefault()
+        await copyCurrentAIContext()
+        return
+      }
+    }
+    if (action === 'copy-visual-crop') {
+      if (selections.value.length || hoveredElement.value) {
+        event.preventDefault()
+        await copyCurrentVisualCrop()
+        return
+      }
+    }
 
     // Hold-to-inspect: pressing Alt outside editable target when not inspecting and no active selection
     if (
@@ -734,6 +773,8 @@ export const useInspector = (
     feedback,
     isOpening,
     copySelectionLocation,
+    copyCurrentAIContext,
+    copyCurrentVisualCrop,
     clearSelection,
     dispose,
     formatSelectionLocation,

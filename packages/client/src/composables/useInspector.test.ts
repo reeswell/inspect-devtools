@@ -32,9 +32,17 @@ describe('getInspectorShortcutAction', () => {
     expect(getInspectorShortcutAction({ altKey: true, code: 'KeyP', shiftKey: true, target: document.body })).toBeUndefined()
   })
 
+  it('recognizes copy-ai-context and copy-visual-crop shortcuts', () => {
+    expect(getInspectorShortcutAction({ metaKey: true, altKey: true, code: 'KeyC', target: document.body })).toBe('copy-ai-context')
+    expect(getInspectorShortcutAction({ ctrlKey: true, altKey: true, code: 'KeyC', target: document.body })).toBe('copy-ai-context')
+    expect(getInspectorShortcutAction({ metaKey: true, shiftKey: true, code: 'KeyC', target: document.body })).toBe('copy-visual-crop')
+    expect(getInspectorShortcutAction({ ctrlKey: true, shiftKey: true, code: 'KeyC', target: document.body })).toBe('copy-visual-crop')
+  })
+
   it('ignores shortcuts from editable elements', () => {
     const input = document.createElement('input')
     expect(getInspectorShortcutAction({ altKey: true, code: 'KeyI', shiftKey: true, target: input })).toBeUndefined()
+    expect(getInspectorShortcutAction({ metaKey: true, altKey: true, code: 'KeyC', target: input })).toBeUndefined()
   })
 })
 
