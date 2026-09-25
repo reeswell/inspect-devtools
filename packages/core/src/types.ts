@@ -42,6 +42,13 @@ export interface ClientInspectDevtoolsOptions {
   }
 }
 
+export interface ComponentHierarchyItem {
+  componentName: string
+  filePath?: string
+  line?: number
+  column?: number
+}
+
 export interface GrabSelection {
   framework: InspectDevtoolsFramework
   tagName: string
@@ -50,4 +57,5 @@ export interface GrabSelection {
   line?: number
   column?: number
   cssSelector?: string
+  hierarchy?: ComponentHierarchyItem[]
 }

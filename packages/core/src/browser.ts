@@ -1,6 +1,6 @@
-import type { InspectDevtoolsFramework, GrabSelection } from './types.ts'
+import type { InspectDevtoolsFramework, GrabSelection, ComponentHierarchyItem } from './types.ts'
 
-export type { GrabSelection }
+export type { GrabSelection, ComponentHierarchyItem }
 
 interface ReactDebugSource {
   fileName?: string
@@ -11,6 +11,9 @@ interface ReactDebugSource {
 interface ReactFiberLike {
   elementType?: unknown
   type?: unknown
+  stateNode?: unknown
+  child?: ReactFiberLike | null
+  sibling?: ReactFiberLike | null
   return?: ReactFiberLike | null
   _debugOwner?: ReactFiberLike | null
   _debugSource?: ReactDebugSource | null
@@ -216,10 +219,149 @@ export const createElementSelector = (element: Element): string => {
   return parts.join(' > ')
 }
 
+export const getEventTargetElement = (event: Event): Element | null => {
+  const path = typeof event.composedPath === 'function' ? event.composedPath() : []
+  for (const item of path) {
+    if (item instanceof Element)
+      return item
+  }
+  return event.target instanceof Element ? event.target : null
+}
+
+export const collectAllElements = (root: Element | Document = document.body): Element[] => {
+  const elements: Element[] = []
+  const queue: Array<Element | DocumentFragment> = [root instanceof Document ? root.body : root]
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current)
+      continue
+    const children = current.children
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]
+      elements.push(child)
+      if (child.shadowRoot)
+        queue.push(child.shadowRoot)
+      if (child.children.length > 0)
+        queue.push(child)
+    }
+  }
+  return elements
+}
+
+export const getReactHierarchy = (element: Element): ComponentHierarchyItem[] => {
+  const domSources = new Map<string, { filePath: string, line?: number, column?: number }>()
+  let domScan: Element | null = element
+  while (domScan) {
+    const raw = domScan.getAttribute('data-inspect-devtools-source')
+    const comp = domScan.getAttribute('data-inspect-devtools-component')
+    if (raw && comp) {
+      const match = raw.match(INSPECTOR_SOURCE_RE)
+      if (match && !domSources.has(comp)) {
+        const [, filePath, line, column] = match
+        domSources.set(comp, {
+          filePath: normalizeSourcePath(filePath),
+          line: Number(line) || undefined,
+          column: Number(column) || undefined,
+        })
+      }
+    }
+    domScan = domScan.parentElement
+  }
+
+  const fiber = getReactFiber(element)
+
+  if (fiber) {
+    const items: ComponentHierarchyItem[] = []
+    const seenNames = new Set<string>()
+    let current: ReactFiberLike | null = fiber
+    const nearestName = getNearestComponentName(fiber, isSourceComponentName)
+    const inspectorSource = getReactInspectorSource(element)
+
+    while (current) {
+      let name = getFiberDisplayName(current)
+      const stack = parseDebugStack(current._debugStack)
+        || (fiber?._debugOwner === current ? parseDebugStack(fiber._debugStack) : undefined)
+
+      if (!isSourceComponentName(name) && stack?.componentName)
+        name = stack.componentName
+
+      if (isSourceComponentName(name)) {
+        if (!seenNames.has(name)) {
+          seenNames.add(name)
+
+          const domSource = domSources.get(name)
+          let filePath: string | undefined
+          let line: number | undefined
+          let column: number | undefined
+
+          if (name === nearestName && inspectorSource.filePath) {
+            filePath = inspectorSource.filePath
+            line = inspectorSource.line
+            column = inspectorSource.column
+          }
+          else if (domSource) {
+            filePath = domSource.filePath
+            line = domSource.line
+            column = domSource.column
+          }
+          else {
+            const source = current._debugSource
+              || (fiber?._debugOwner === current ? fiber._debugSource : undefined)
+            filePath = source?.fileName ? normalizeSourcePath(source.fileName) : stack?.filePath
+            line = source?.lineNumber ?? stack?.line
+            column = source?.columnNumber ?? stack?.column
+          }
+
+          items.unshift({
+            componentName: name,
+            filePath,
+            line,
+            column,
+          })
+        }
+      }
+      current = current.return ?? null
+    }
+
+    if (items.length > 0)
+      return items
+  }
+
+  // Fallback: walk DOM ancestors with inspector metadata
+  const items: ComponentHierarchyItem[] = []
+  const seenNames = new Set<string>()
+  let domCurrent: Element | null = element
+
+  while (domCurrent) {
+    const raw = domCurrent.getAttribute('data-inspect-devtools-source')
+    const comp = domCurrent.getAttribute('data-inspect-devtools-component')
+    if (raw) {
+      const match = raw.match(INSPECTOR_SOURCE_RE)
+      if (match) {
+        const [, filePath, line, column] = match
+        const name = comp || domCurrent.tagName.toLowerCase()
+        if (isSourceComponentName(name) && !seenNames.has(name)) {
+          seenNames.add(name)
+          items.unshift({
+            componentName: name,
+            filePath: normalizeSourcePath(filePath),
+            line: Number(line) || undefined,
+            column: Number(column) || undefined,
+          })
+        }
+      }
+    }
+    domCurrent = domCurrent.parentElement
+  }
+
+  return items
+}
+
 export const createGrabSelection = (
   element: Element,
   framework: InspectDevtoolsFramework,
-  source?: Partial<Pick<GrabSelection, 'componentName' | 'filePath' | 'line' | 'column'>>,
+  source?: Partial<Pick<GrabSelection, 'componentName' | 'filePath' | 'line' | 'column' | 'hierarchy'>>,
 ): GrabSelection => ({
   framework,
   tagName: element.tagName.toLowerCase(),
@@ -228,12 +370,18 @@ export const createGrabSelection = (
   line: source?.line,
   column: source?.column,
   cssSelector: createElementSelector(element),
+  hierarchy: source?.hierarchy,
 })
 
 export const getReactDebugSource = (element: Element): Partial<GrabSelection> => {
+  const hierarchy = getReactHierarchy(element)
   const inspectorSource = getReactInspectorSource(element)
-  if (inspectorSource.filePath)
-    return inspectorSource
+  if (inspectorSource.filePath) {
+    return {
+      ...inspectorSource,
+      hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
+    }
+  }
 
   const fiber = getReactFiber(element)
   const candidates: Array<Partial<Pick<GrabSelection, 'componentName' | 'filePath' | 'line' | 'column'>> & { origin: 'app' | 'package' | 'unknown' }> = []
@@ -275,11 +423,16 @@ export const getReactDebugSource = (element: Element): Partial<GrabSelection> =>
 
   if (source) {
     const { origin: _, ...selectionSource } = source
-    return selectionSource
+    return {
+      ...selectionSource,
+      hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
+    }
   }
 
   const componentName = getNearestComponentName(fiber)
-  return componentName ? { componentName } : {}
+  return componentName
+    ? { componentName, hierarchy: hierarchy.length > 0 ? hierarchy : undefined }
+    : (hierarchy.length > 0 ? { hierarchy } : {})
 }
 
 const VUE_INSPECTOR_RE = /(.+):(\d+):(\d+)$/
@@ -305,7 +458,110 @@ const getVueInspectorData = (element: Element): string | undefined => {
   return attrInspector || undefined
 }
 
+interface VueSubTreeChildLike {
+  el?: Element | null
+}
+
+interface VueSubTreeLike {
+  el?: Element | null
+  children?: VueSubTreeChildLike[] | null
+  type?: unknown
+}
+
+interface VueComponentTypeLike {
+  __name?: string
+  name?: string
+  __file?: string
+}
+
+interface VueInstanceLike {
+  type?: VueComponentTypeLike | null
+  parent?: VueInstanceLike | null
+  subTree?: VueSubTreeLike | null
+  $el?: Element | null
+}
+
+const getVueInstance = (element: Element): VueInstanceLike | null => {
+  const record = element as unknown as {
+    __vueParentComponent?: VueInstanceLike
+    __vnode?: { ctx?: VueInstanceLike }
+  }
+  return record.__vueParentComponent ?? record.__vnode?.ctx ?? null
+}
+
+export const getVueHierarchy = (element: Element): ComponentHierarchyItem[] => {
+  let inst = getVueInstance(element)
+
+  if (inst) {
+    const items: ComponentHierarchyItem[] = []
+    const seenNames = new Set<string>()
+    const initialData = getVueInspectorData(element)
+    const initialMatch = initialData?.match(VUE_INSPECTOR_RE)
+    let isInnermost = true
+
+    while (inst) {
+      const type = inst.type
+      if (type && typeof type === 'object') {
+        const name = type.__name || type.name || (typeof type.__file === 'string' ? type.__file.split('/').pop()?.replace(/\.\w+$/, '') : undefined)
+        const filePath = typeof type.__file === 'string' ? normalizeSourcePath(type.__file) : undefined
+        if (name && !seenNames.has(name)) {
+          seenNames.add(name)
+
+          let line: number | undefined
+          let column: number | undefined
+
+          if (isInnermost && initialMatch) {
+            line = Number(initialMatch[2]) || undefined
+            column = Number(initialMatch[3]) || undefined
+          }
+
+          items.unshift({
+            componentName: name,
+            filePath,
+            line,
+            column,
+          })
+        }
+        isInnermost = false
+      }
+      inst = inst.parent ?? null
+    }
+
+    if (items.length > 0)
+      return items
+  }
+
+  // Fallback: walk DOM ancestors with inspector metadata
+  const items: ComponentHierarchyItem[] = []
+  const seenNames = new Set<string>()
+  let domCurrent: Element | null = element
+
+  while (domCurrent) {
+    const data = getVueInspectorData(domCurrent)
+    if (data) {
+      const match = data.match(VUE_INSPECTOR_RE)
+      if (match) {
+        const [, filePath, line, column] = match
+        const baseName = filePath.split('/').pop()?.replace(/\.\w+$/, '') || domCurrent.tagName.toLowerCase()
+        if (!seenNames.has(baseName)) {
+          seenNames.add(baseName)
+          items.unshift({
+            componentName: baseName,
+            filePath: normalizeSourcePath(filePath),
+            line: Number(line) || undefined,
+            column: Number(column) || undefined,
+          })
+        }
+      }
+    }
+    domCurrent = domCurrent.parentElement
+  }
+
+  return items
+}
+
 export const getVueInspectorSource = (element: Element): Partial<GrabSelection> => {
+  const hierarchy = getVueHierarchy(element)
   const candidates: Element[] = []
   let current: Element | null = element
   while (current) {
@@ -314,16 +570,87 @@ export const getVueInspectorSource = (element: Element): Partial<GrabSelection> 
   }
   const raw = candidates.map(getVueInspectorData).find(Boolean)
   if (!raw)
-    return {}
+    return hierarchy.length > 0 ? { hierarchy } : {}
 
   const match = raw.match(VUE_INSPECTOR_RE)
   if (!match)
-    return {}
+    return hierarchy.length > 0 ? { hierarchy } : {}
 
   const [, filePath, line, column] = match
   return {
     filePath,
     line: Number(line) || undefined,
     column: Number(column) || undefined,
+    hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
   }
 }
+
+export const getComponentRootElements = (element: Element, componentName: string): Element[] => {
+  // 1. React Fiber traversal
+  const fiber = getReactFiber(element)
+  if (fiber) {
+    let current: ReactFiberLike | null = fiber
+    while (current) {
+      const name = getFiberDisplayName(current)
+      if (name === componentName) {
+        const elements: Element[] = []
+        const traverse = (node: ReactFiberLike | null | undefined) => {
+          if (!node)
+            return
+          if (node.stateNode instanceof Element) {
+            elements.push(node.stateNode)
+            traverse(node.sibling)
+          }
+          else {
+            traverse(node.child)
+            traverse(node.sibling)
+          }
+        }
+        traverse(current.child)
+        if (elements.length > 0)
+          return elements
+        break
+      }
+      current = current.return ?? null
+    }
+  }
+
+  // 2. Vue instance traversal
+  let inst = getVueInstance(element)
+  while (inst) {
+    const type = inst.type
+    const name = type?.__name || type?.name || (typeof type?.__file === 'string' ? type.__file.split('/').pop()?.replace(/\.\w+$/, '') : undefined)
+    if (name === componentName) {
+      const subTree = inst.subTree
+      if (subTree) {
+        if (Array.isArray(subTree.children)) {
+          const elements = subTree.children
+            .map(c => c?.el)
+            .filter((el): el is Element => el instanceof Element)
+          if (elements.length > 0)
+            return elements
+        }
+        if (subTree.el instanceof Element)
+          return [subTree.el]
+      }
+      if (inst.$el instanceof Element)
+        return [inst.$el]
+      break
+    }
+    inst = inst.parent ?? null
+  }
+
+  // 3. Fallback: all top-level DOM nodes matching data-inspect-devtools-component
+  const domMatches = Array.from(document.querySelectorAll(`[data-inspect-devtools-component="${componentName}"]`))
+  if (domMatches.length > 0) {
+    const topLevel = domMatches.filter(el =>
+      !domMatches.some(other => other !== el && other.contains(el)),
+    )
+    if (topLevel.length > 0)
+      return topLevel
+  }
+
+  const ancestor = element.closest(`[data-inspect-devtools-component="${componentName}"]`)
+  return ancestor ? [ancestor] : [element]
+}
+

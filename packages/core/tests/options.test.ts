@@ -35,9 +35,9 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(resolveInspectDevtoolsOptions({ copyLineColumn: 'column' }).copyLineColumn).toBe('column')
   })
 
-  it('defaults openOnClick to true and honors an explicit opt-out', () => {
-    expect(resolveInspectDevtoolsOptions().openOnClick).toBe(true)
-    expect(resolveInspectDevtoolsOptions({ openOnClick: false }).openOnClick).toBe(false)
+  it('defaults openOnClick to false and honors an explicit opt-in', () => {
+    expect(resolveInspectDevtoolsOptions().openOnClick).toBe(false)
+    expect(resolveInspectDevtoolsOptions({ openOnClick: true }).openOnClick).toBe(true)
   })
 
   it('defaults editorProtocol to auto and honors configured protocols', () => {

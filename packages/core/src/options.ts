@@ -8,5 +8,5 @@ export const resolveInspectDevtoolsOptions = (options: InspectDevtoolsOptions = 
   copyRoute: options.copyRoute ?? false,
   copyFormat: options.copyFormat ?? 'mention',
   copyLineColumn: options.copyLineColumn ?? false,
-  openOnClick: options.openOnClick ?? true,
+  openOnClick: options.openOnClick ?? false,
 })

@@ -72,7 +72,9 @@ const {
   modifierAction,
   openActiveSelectionInEditor,
   overlayStyles,
+  selectHierarchyIndex,
   selections,
+  selectionCount,
   sourceLabel,
   startInspecting,
   stopInspecting,
@@ -93,18 +95,41 @@ const {
     />
     <div class="marquee-rect" :class="{ 'marquee-rect--remove': isMarqueeing && modifierAction === 'subtract' }" :style="marqueeStyle" />
 
-    <button
+    <div
       v-if="sourceLabel"
       v-show="sourceLabel.canOpen"
-      class="source-badge"
-      type="button"
+      class="source-badge-container"
       :style="labelStyle"
-      :title="sourceLabel.hint"
-      @click="openActiveSelectionInEditor()"
     >
-      <strong>{{ sourceLabel.label }}</strong>
-      <span>{{ sourceLabel.hint }}</span>
-    </button>
+      <nav
+        v-if="!isInspecting && sourceLabel.hierarchy && sourceLabel.hierarchy.length > 1"
+        class="hierarchy-breadcrumb"
+        aria-label="Component Hierarchy"
+      >
+        <button
+          v-for="(item, idx) in sourceLabel.hierarchy"
+          :key="idx"
+          type="button"
+          class="breadcrumb-item"
+          :class="{ 'breadcrumb-item--active': idx === sourceLabel.activeHierarchyIndex }"
+          :title="item.filePath ? `${item.componentName} (${item.filePath}${item.line ? `:${item.line}` : ''})` : item.componentName"
+          @click.stop="selectHierarchyIndex(idx)"
+        >
+          <span class="breadcrumb-item__name">{{ item.componentName }}</span>
+          <span v-if="idx < sourceLabel.hierarchy.length - 1" class="breadcrumb-item__sep" aria-hidden="true">›</span>
+        </button>
+      </nav>
+
+      <button
+        class="source-badge"
+        type="button"
+        :title="sourceLabel.hint"
+        @click="openActiveSelectionInEditor()"
+      >
+        <strong>{{ sourceLabel.label }}</strong>
+        <span>{{ sourceLabel.hint }}</span>
+      </button>
+    </div>
 
     <div class="toast-stack" aria-live="polite">
       <p v-if="lastError" class="toast toast-error" role="alert">{{ lastError }}</p>
@@ -135,7 +160,7 @@ const {
             <path d="M6 2H3.5A1.5 1.5 0 0 0 2 3.5V6M10 2h2.5A1.5 1.5 0 0 1 14 3.5V6M2 10v2.5A1.5 1.5 0 0 0 3.5 14H6M14 10v2.5a1.5 1.5 0 0 1-1.5 1.5H10" />
             <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
           </svg>
-          <span v-if="selections.length" class="dock-badge" aria-hidden="true">{{ selections.length }}</span>
+          <span v-if="selectionCount" class="dock-badge" aria-hidden="true">{{ selectionCount }}</span>
         </button>
         <button
           class="dock-button dock-button--theme"

@@ -121,7 +121,7 @@ describe('useInspector', () => {
     inspector.startInspecting()
     const button = document.querySelector('button')!
     dispatchPointer(button, 'pointermove', 10, 10)
-    expect(inspector.sourceLabel.value?.hint).toBe('Click to copy source')
+    expect(inspector.sourceLabel.value?.hint).toBe('Click to select · Ctrl+Click to open')
 
     button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
     await new Promise(resolve => setTimeout(resolve, 0))
@@ -133,6 +133,52 @@ describe('useInspector', () => {
 
     // Manually open via active selection
     await inspector.openActiveSelectionInEditor()
+    expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
+    }))
+    inspector.dispose()
+  })
+
+  it('directly opens in editor when Cmd/Ctrl is pressed on click even with openOnClick false', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
+    vi.stubGlobal('fetch', fetch)
+    stubClipboard()
+    document.body.innerHTML = '<button data-inspect-devtools-source="/project/src/App.tsx:8:5">Save</button>'
+
+    const inspector = useInspector(createClientOptions({
+      framework: 'react',
+      openOnClick: false,
+      endpoints: { openInEditor: '/__inspect-devtools__/open-in-editor' },
+    }))
+    inspector.startInspecting()
+    const button = document.querySelector('button')!
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
+    }))
+    inspector.dispose()
+  })
+
+  it('directly opens in editor on dblclick in inspecting mode or on selected element', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
+    vi.stubGlobal('fetch', fetch)
+    stubClipboard()
+    document.body.innerHTML = '<button data-inspect-devtools-source="/project/src/App.tsx:8:5">Save</button>'
+
+    const inspector = useInspector(createClientOptions({
+      framework: 'react',
+      openOnClick: false,
+      endpoints: { openInEditor: '/__inspect-devtools__/open-in-editor' },
+    }))
+    inspector.startInspecting()
+    const button = document.querySelector('button')!
+    button.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
     expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
       method: 'POST',
       body: JSON.stringify({ path: '/project/src/App.tsx', line: 8, column: 5 }),
@@ -857,4 +903,195 @@ describe('useInspector', () => {
       inspector.dispose()
     })
   })
+
+  describe('hold-to-inspect (即用即走模式)', () => {
+    it('activates inspecting on Alt keydown, previews on hover, and selects on Alt keyup', async () => {
+      const writeText = stubClipboard()
+      document.body.innerHTML = '<button id="btn" data-inspect-devtools-source="/project/src/Button.tsx:10:4">Click me</button>'
+      stubRects({ '#btn': { left: 10, top: 10, width: 80, height: 30 } })
+
+      const inspector = useInspector(createClientOptions({ framework: 'react', openOnClick: false }))
+      expect(inspector.isInspecting.value).toBe(false)
+      expect(inspector.isHoldInspecting.value).toBe(false)
+
+      // Hold Alt
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(true)
+      expect(inspector.isHoldInspecting.value).toBe(true)
+
+      // Hover over button
+      const btn = document.querySelector('#btn')!
+      dispatchPointer(btn, 'pointermove', 20, 20, { altKey: true })
+      expect(inspector.hoveredElement.value).toBe(btn)
+
+      // Release Alt
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(inspector.isInspecting.value).toBe(false)
+      expect(inspector.isHoldInspecting.value).toBe(false)
+      expect(inspector.selection.value?.filePath).toBe('/project/src/Button.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/Button.tsx')
+      inspector.dispose()
+    })
+
+    it('exits inspecting on Alt keyup if no element was hovered', async () => {
+      document.body.innerHTML = '<div><p>Empty area</p></div>'
+
+      const inspector = useInspector(createClientOptions({ framework: 'react' }))
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(true)
+
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(false)
+      expect(inspector.selection.value).toBeNull()
+      inspector.dispose()
+    })
+
+    it('ignores Alt keydown inside editable elements', () => {
+      document.body.innerHTML = '<input id="text-input" type="text" />'
+      const input = document.querySelector('#text-input')!
+
+      const inspector = useInspector(createClientOptions({ framework: 'react' }))
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(false)
+      expect(inspector.isHoldInspecting.value).toBe(false)
+      inspector.dispose()
+    })
+
+    it('cancels hold-to-inspect on Escape', () => {
+      document.body.innerHTML = '<button id="btn">Click</button>'
+      const inspector = useInspector(createClientOptions({ framework: 'react' }))
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt', code: 'AltLeft', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(true)
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }))
+      expect(inspector.isInspecting.value).toBe(false)
+      expect(inspector.isHoldInspecting.value).toBe(false)
+      inspector.dispose()
+    })
+  })
+
+  describe('component hierarchy navigation (组件层级穿梭机)', () => {
+    it('navigates component hierarchy using ArrowUp and ArrowDown, copying corresponding sources', async () => {
+      const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) })
+      vi.stubGlobal('fetch', fetch)
+      const writeText = stubClipboard()
+      document.body.innerHTML = `
+        <div id="app" data-inspect-devtools-source="/project/src/App.tsx:1:1" data-inspect-devtools-component="App">
+          <div id="card" data-inspect-devtools-source="/project/src/Card.tsx:5:3" data-inspect-devtools-component="Card">
+            <button id="btn" data-inspect-devtools-source="/project/src/Button.tsx:12:4" data-inspect-devtools-component="Button">Click</button>
+          </div>
+        </div>
+      `
+      stubRects({
+        '#app': { left: 0, top: 0, width: 300, height: 200 },
+        '#card': { left: 10, top: 10, width: 200, height: 100 },
+        '#btn': { left: 20, top: 20, width: 80, height: 30 },
+      })
+
+      const inspector = useInspector(createClientOptions({
+        framework: 'react',
+        openOnClick: false,
+        endpoints: { openInEditor: '/__inspect-devtools__/open-in-editor' },
+      }))
+      inspector.startInspecting()
+
+      const btn = document.querySelector('#btn')!
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      // Button clicked: hierarchy should have App > Card > Button
+      expect(inspector.selection.value?.componentName).toBe('Button')
+      expect(inspector.selection.value?.filePath).toBe('/project/src/Button.tsx')
+      expect(inspector.selection.value?.hierarchy?.length).toBe(3)
+      expect(inspector.activeHierarchyIndex.value).toBe(2)
+
+      // Press ArrowUp: moves up to Card
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(inspector.activeHierarchyIndex.value).toBe(1)
+      expect(inspector.selection.value?.componentName).toBe('Card')
+      expect(inspector.selection.value?.filePath).toBe('/project/src/Card.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/Card.tsx')
+
+      // Press ArrowUp: moves up to App
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(inspector.activeHierarchyIndex.value).toBe(0)
+      expect(inspector.selection.value?.componentName).toBe('App')
+      expect(inspector.selection.value?.filePath).toBe('/project/src/App.tsx')
+      expect(writeText).toHaveBeenCalledWith('Route: / \n\n@src/App.tsx')
+
+      // Press ArrowUp at root: stays at 0
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(inspector.activeHierarchyIndex.value).toBe(0)
+
+      // Press ArrowDown: moves back down to Card
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(inspector.activeHierarchyIndex.value).toBe(1)
+      expect(inspector.selection.value?.componentName).toBe('Card')
+
+      // Direct selectHierarchyIndex
+      await inspector.selectHierarchyIndex(2)
+      expect(inspector.activeHierarchyIndex.value).toBe(2)
+      expect(inspector.selection.value?.componentName).toBe('Button')
+      expect(inspector.sourceLabel.value?.hint).toBe('Click badge or Enter to open in editor · ↑/↓ navigate')
+
+      // Press Enter: opens active selection in editor
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(fetch).toHaveBeenCalledWith('/__inspect-devtools__/open-in-editor', expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ path: '/project/src/Button.tsx', line: 12, column: 4 }),
+      }))
+
+      inspector.dispose()
+    })
+  })
+
+  describe('Shadow DOM support in inspector', () => {
+    it('penetrates open shadowRoot on click and marquee', async () => {
+      stubClipboard()
+      document.body.innerHTML = '<div id="host"></div>'
+      const host = document.getElementById('host')!
+      const shadow = host.attachShadow({ mode: 'open' })
+      shadow.innerHTML = '<button id="inner-btn" data-inspect-devtools-source="/project/src/ShadowBtn.tsx:8:2">Inner</button>'
+
+      stubRects({
+        '#host': { left: 0, top: 0, width: 200, height: 100 },
+      })
+      const innerBtn = shadow.getElementById('inner-btn')!
+      innerBtn.getBoundingClientRect = () => ({
+        left: 10,
+        top: 10,
+        width: 80,
+        height: 30,
+        right: 90,
+        bottom: 40,
+        x: 10,
+        y: 10,
+        toJSON: () => ({}),
+      } as DOMRect)
+
+      const inspector = useInspector(createClientOptions({ framework: 'react', openOnClick: false }))
+      inspector.startInspecting()
+
+      // Click with composedPath pointing to innerBtn
+      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true, composed: true })
+      Object.defineProperty(clickEvt, 'composedPath', { value: () => [innerBtn, shadow, host, document.body] })
+      innerBtn.dispatchEvent(clickEvt)
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(inspector.selection.value?.filePath).toBe('/project/src/ShadowBtn.tsx')
+      inspector.dispose()
+    })
+  })
 })
+

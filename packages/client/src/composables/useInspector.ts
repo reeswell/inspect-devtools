@@ -1,110 +1,39 @@
 import { computed, getCurrentInstance, onUnmounted, shallowRef } from 'vue'
-import type { ClientInspectDevtoolsOptions } from '@inspect-devtools/core'
-import { createGrabSelection, getReactDebugSource, getVueInspectorSource, type GrabSelection } from '@inspect-devtools/core/browser'
+import type { ClientInspectDevtoolsOptions, GrabSelection } from '@inspect-devtools/core'
+import {
+  createGrabSelection,
+  getComponentRootElements,
+  getEventTargetElement,
+  getReactDebugSource,
+  getVueInspectorSource,
+} from '@inspect-devtools/core/browser'
 import { formatRouteLocation, formatSelectionLocation } from './selection-location'
 import { formatEditorProtocolUrl, openViaUrlScheme } from './open-editor'
 import { useRpc } from './useRpc'
+import { DRAG_THRESHOLD, ERROR_TIMEOUT, FEEDBACK_TIMEOUT } from './constants'
+import type { MarqueeMode, MarqueeRect, SelectionEntry, UseInspectorOptions } from './types'
+import {
+  composedContains,
+  getElementDepth,
+  isDevtoolsElement,
+  isEditableTarget,
+} from './dom'
+import { collectMarqueeEntries } from './marquee'
+import { getClickSelectionAction, getInspectorShortcutAction } from './keyboard'
+import { copyText, formatSourceLabel } from './clipboard'
+import { computeLabelStyle, toFrameStyle, toMarqueeStyle } from './overlay'
 
-const isDevtoolsElement = (element: EventTarget | null): boolean => {
-  if (!(element instanceof Element))
-    return false
-  return Boolean(element.closest('[data-inspect-devtools="true"]'))
-}
+export { composedContains, getParentOrShadowHost, isDevtoolsElement, isEditableTarget } from './dom'
+export { getClickSelectionAction, getInspectorShortcutAction } from './keyboard'
+export type { MarqueeMode, MarqueeRect, SelectionEntry, UseInspectorOptions } from './types'
 
-export const isEditableTarget = (target: EventTarget | null): boolean => {
-  if (!(target instanceof Element))
-    return false
-
-  return target instanceof HTMLInputElement
-    || target instanceof HTMLTextAreaElement
-    || target instanceof HTMLSelectElement
-    || (target instanceof HTMLElement && target.isContentEditable)
-    || Boolean(target.closest('[contenteditable="true"]'))
-}
-
-export const getInspectorShortcutAction = (event: Pick<KeyboardEvent, 'altKey' | 'code' | 'shiftKey' | 'target'>): 'cancel' | 'toggle' | undefined => {
-  if (isEditableTarget(event.target))
-    return undefined
-  if (event.code === 'Escape')
-    return 'cancel'
-  if (event.altKey && event.shiftKey && event.code === 'KeyI')
-    return 'toggle'
-}
-
-// Photoshop 惯例：Shift 加选、Alt 减选；同按时加选优先
-export const getClickSelectionAction = (event: Pick<MouseEvent, 'altKey' | 'shiftKey'>): 'add' | 'subtract' | undefined => {
-  if (event.shiftKey)
-    return 'add'
-  if (event.altKey)
-    return 'subtract'
-}
-
-const formatSourceLabel = (selection: GrabSelection): string => {
-  if (!selection.filePath)
-    return selection.componentName || selection.tagName
-
-  const normalized = selection.filePath.replace(/\\/g, '/')
-  const srcIndex = normalized.lastIndexOf('/src/')
-  const nodeModulesIndex = normalized.lastIndexOf('/node_modules/')
-  const displayPath = srcIndex >= 0
-    ? normalized.slice(srcIndex + 1)
-    : nodeModulesIndex >= 0
-      ? normalized.slice(nodeModulesIndex + 1)
-      : normalized.split('/').slice(-3).join('/')
-
-  return `${displayPath}${selection.line ? `:${selection.line}` : ''}${selection.column ? `:${selection.column}` : ''}`
-}
-
-const copyText = async (text: string): Promise<void> => {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text)
-    return
-  }
-
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.setAttribute('readonly', '')
-  textarea.style.position = 'fixed'
-  textarea.style.left = '-9999px'
-  textarea.style.top = '0'
-  document.body.appendChild(textarea)
-  textarea.select()
-
-  try {
-    if (!document.execCommand('copy'))
-      throw new Error('Copy command was not accepted')
-  }
-  finally {
-    textarea.remove()
-  }
-}
-
-interface UseInspectorOptions {
-  onInspectStart?: () => void
-}
-
-interface MarqueeRect {
-  left: number
-  top: number
-  width: number
-  height: number
-}
-
-type MarqueeMode = 'replace' | 'add' | 'subtract'
-
-// selections 与 selectedElements 始终等长同序，一条 {element, selection} 对应一个高亮框
-interface SelectionEntry {
-  element: Element
-  selection: GrabSelection
-}
-
-const FEEDBACK_TIMEOUT = 2400
-const ERROR_TIMEOUT = 3600
-const DRAG_THRESHOLD = 4
-
-export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onInspectStart }: UseInspectorOptions = {}) => {
+export const useInspector = (
+  clientOptions: ClientInspectDevtoolsOptions,
+  { onInspectStart }: UseInspectorOptions = {},
+) => {
   const rpc = useRpc(clientOptions)
   const isInspecting = shallowRef(false)
+  const isHoldInspecting = shallowRef(false)
   const lastError = shallowRef('')
   const feedback = shallowRef('')
   const isOpening = shallowRef(false)
@@ -112,6 +41,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const hoverSelection = shallowRef<GrabSelection | null>(null)
   const hoveredElement = shallowRef<Element | null>(null)
   const selectedElements = shallowRef<Element[]>([])
+  const activeHierarchyIndex = shallowRef<number | null>(null)
   const viewportVersion = shallowRef(0)
   const dragStart = shallowRef<{ x: number, y: number } | null>(null)
   const isMarqueeing = shallowRef(false)
@@ -154,6 +84,21 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   const setEntries = (entries: SelectionEntry[]) => {
     selectedElements.value = entries.map(entry => entry.element)
     selections.value = entries.map(entry => entry.selection)
+    const isSingleComponent = entries.length >= 1 && entries.every(e =>
+      e.selection.filePath === entries[0].selection.filePath
+      && e.selection.componentName === entries[0].selection.componentName,
+    )
+    if (isSingleComponent && entries[0].selection.hierarchy?.length) {
+      const h = entries[0].selection.hierarchy
+      const matchIdx = h.findIndex(
+        item => item.componentName === entries[0].selection.componentName
+          && (!item.filePath || item.filePath === entries[0].selection.filePath),
+      )
+      activeHierarchyIndex.value = matchIdx >= 0 ? matchIdx : h.length - 1
+    }
+    else {
+      activeHierarchyIndex.value = null
+    }
     if (resizeObserver) {
       resizeObserver.disconnect()
       for (const entry of entries) {
@@ -163,19 +108,12 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     }
   }
 
-  const getElementDepth = (element: Element) => {
-    let depth = 0
-    for (let current = element.parentElement; current; current = current.parentElement)
-      depth += 1
-    return depth
-  }
-
   // 找最内层“是目标或包含目标”的已选条目（兼容框选提升过的外框，点框内任意位置即命中）
   const findRemovalEntryIndex = (target: Element): number => {
     let matchIndex = -1
     let matchDepth = -1
     getEntries().forEach((entry, index) => {
-      if (entry.element !== target && !entry.element.contains(target))
+      if (entry.element !== target && !composedContains(entry.element, target))
         return
       const depth = getElementDepth(entry.element)
       if (depth > matchDepth) {
@@ -188,6 +126,13 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
   const selection = computed(() => selections.value[0] ?? null)
   const activeSelection = computed(() => hoverSelection.value ?? selection.value)
+  const selectionCount = computed(() => {
+    return new Set(
+      selections.value
+        .map(s => `${s.filePath || ''}:${s.line || ''}:${s.column || ''}:${s.componentName || ''}`)
+        .filter(Boolean),
+    ).size || selections.value.length
+  })
 
   let feedbackTimer: ReturnType<typeof setTimeout> | undefined
   let errorTimer: ReturnType<typeof setTimeout> | undefined
@@ -211,16 +156,6 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     clearTimeout(errorTimer)
     feedback.value = ''
     lastError.value = ''
-  }
-
-  const toFrameStyle = (element: Element) => {
-    const rect = element.getBoundingClientRect()
-    return {
-      display: 'block',
-      transform: `translate(${rect.left}px, ${rect.top}px)`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-    } as const
   }
 
   // 已提交选择的高亮框；悬停预览单独走 hoverOverlayStyle，多选时互不顶掉
@@ -247,15 +182,8 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   })
 
   const marqueeStyle = computed(() => {
-    const rect = marqueeRect.value
-    if (!rect)
-      return { display: 'none' } as const
-    return {
-      display: 'block',
-      transform: `translate(${rect.left}px, ${rect.top}px)`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-    } as const
+    viewportVersion.value
+    return toMarqueeStyle(marqueeRect.value)
   })
 
   const sourceLabel = computed(() => {
@@ -263,39 +191,39 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     if (!currentSelection)
       return null
 
+    const isMac = typeof navigator !== 'undefined'
+      && (/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || '') || /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || ''))
+    const modKey = isMac ? 'Cmd' : 'Ctrl'
+
     let hint = 'Source unresolved'
     if (currentSelection.filePath) {
       if (isInspecting.value) {
-        hint = clientOptions.openOnClick ? 'Click to open in editor' : 'Click to copy source'
+        hint = clientOptions.openOnClick
+          ? 'Click to open in editor'
+          : `Click to select · ${modKey}+Click to open`
       }
       else {
-        hint = 'Click badge to open in editor'
+        hint = currentSelection.hierarchy && currentSelection.hierarchy.length > 1
+          ? 'Click badge or Enter to open in editor · ↑/↓ navigate'
+          : 'Click badge to open in editor'
       }
     }
 
     return {
       label: formatSourceLabel(currentSelection),
+      componentName: currentSelection.componentName,
       hint,
       canOpen: Boolean(currentSelection.filePath),
+      hierarchy: currentSelection.hierarchy,
+      activeHierarchyIndex: activeHierarchyIndex.value,
     }
   })
 
   const labelStyle = computed(() => {
     viewportVersion.value
     const element = hoveredElement.value ?? selectedElements.value[0] ?? null
-    if (!element)
-      return { display: 'none' }
-
-    const rect = element.getBoundingClientRect()
-    const labelHeight = 36
-    const top = rect.top >= labelHeight + 8
-      ? rect.top - labelHeight - 4
-      : Math.min(rect.bottom + 4, window.innerHeight - labelHeight - 8)
-    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - 368))
-    return {
-      display: 'grid',
-      transform: `translate(${left}px, ${top}px)`,
-    }
+    const hasBreadcrumb = !isInspecting.value && (activeSelection.value?.hierarchy?.length ?? 0) > 1
+    return computeLabelStyle(element, hasBreadcrumb)
   })
 
   const resolveSource = (element: Element) => {
@@ -305,7 +233,8 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   }
 
   const onPointerDown = (event: PointerEvent) => {
-    if (!isInspecting.value || event.button !== 0 || isDevtoolsElement(event.target))
+    const target = getEventTargetElement(event)
+    if (!isInspecting.value || event.button !== 0 || isDevtoolsElement(target))
       return
 
     event.preventDefault()
@@ -314,8 +243,9 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
 
   const onPointerMove = (event: PointerEvent) => {
     syncModifiers(event)
+    const target = getEventTargetElement(event)
 
-    if (isDevtoolsElement(event.target))
+    if (isDevtoolsElement(target))
       return
 
     // 预览未激活时（未检查且无修饰键意图）不跟踪悬浮，并清掉可能残留的悬浮态
@@ -343,14 +273,14 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       }
     }
 
-    if (!(event.target instanceof Element)) {
+    if (!(target instanceof Element)) {
       hoveredElement.value = null
       hoverSelection.value = null
       return
     }
 
-    hoveredElement.value = event.target
-    hoverSelection.value = createGrabSelection(event.target, clientOptions.framework, resolveSource(event.target))
+    hoveredElement.value = target
+    hoverSelection.value = createGrabSelection(target, clientOptions.framework, resolveSource(target))
   }
 
   const openSelectionInEditor = async (currentSelection = selection.value) => {
@@ -446,59 +376,6 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     await copySelectionLocation()
   }
 
-  const collectMarqueeEntries = (rect: MarqueeRect): SelectionEntry[] => {
-    const right = rect.left + rect.width
-    const bottom = rect.top + rect.height
-    const matched: SelectionEntry[] = []
-
-    for (const element of document.body.querySelectorAll('*')) {
-      if (isDevtoolsElement(element))
-        continue
-      const bounds = element.getBoundingClientRect()
-      if (!bounds.width && !bounds.height)
-        continue
-      if (bounds.left < rect.left || bounds.right > right || bounds.top < rect.top || bounds.bottom > bottom)
-        continue
-
-      const nextSelection = createGrabSelection(element, clientOptions.framework, resolveSource(element))
-      if (nextSelection.filePath)
-        matched.push({ element, selection: nextSelection })
-    }
-
-    // 只保留最内层命中：被其他命中元素包含的容器是祖先而非目标
-    const innermost = matched.filter(item =>
-      !matched.some(other => other.element !== item.element && item.element.contains(other.element)))
-
-    // 高亮框向上提升到同文件最外层祖先（如卡片内层 div → MetricCard 外框）；
-    // 护栏：不越过选框边界、不爬到“其他文件命中元素”的共同祖先（避免回到大容器）
-    const innerItems = innermost.map(item => ({ element: item.element, filePath: item.selection.filePath! }))
-    const entries: SelectionEntry[] = []
-    const seenElements = new Set<Element>()
-    for (const item of innermost) {
-      const filePath = item.selection.filePath!
-      let current = item.element
-      for (let parent = current.parentElement; parent; parent = parent.parentElement) {
-        if (isDevtoolsElement(parent))
-          break
-        const bounds = parent.getBoundingClientRect()
-        if (bounds.left < rect.left || bounds.right > right || bounds.top < rect.top || bounds.bottom > bottom)
-          break
-        const parentSelection = createGrabSelection(parent, clientOptions.framework, resolveSource(parent))
-        if (parentSelection.filePath !== filePath)
-          break
-        if (innerItems.some(other => other.element !== current && other.filePath !== filePath && parent.contains(other.element)))
-          break
-        current = parent
-      }
-      // 每个命中保留独立条目（复制时才按文件去重）；仅折叠提升到同一元素的情况
-      if (seenElements.has(current))
-        continue
-      seenElements.add(current)
-      entries.push({ element: current, selection: item.selection })
-    }
-    return entries
-  }
-
   const selectElementsInRect = async (rect: MarqueeRect, mode: MarqueeMode) => {
     // 减选是纯几何操作：移除完全落在框内的已选条目，无需解析源码
     if (mode === 'subtract') {
@@ -520,7 +397,10 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       return
     }
 
-    const entries = collectMarqueeEntries(rect)
+    const entries = collectMarqueeEntries(rect, {
+      framework: clientOptions.framework,
+      resolveSource,
+    })
     if (!entries.length) {
       showFeedback('')
       showError('No source found for these elements')
@@ -580,36 +460,49 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       return
     }
 
-    if (isDevtoolsElement(event.target))
+    const target = getEventTargetElement(event)
+    if (isDevtoolsElement(target))
       return
 
     const clickAction = getClickSelectionAction(event)
+    const isDirectOpen = Boolean(event.metaKey || event.ctrlKey)
+
+    const isTargetInSelection = selections.value.length > 0
+      && target instanceof Element
+      && selectedElements.value.some(el => el === target || composedContains(el, target))
+
     // 选区常驻：退出检查模式后只要高亮框还在，Shift/Alt+点击继续加减选；
-    // 无修饰键或无选区时不拦截，保留 Shift+点击新开窗口、Alt+点击下载等原生行为
-    if (!isInspecting.value && !(clickAction && selections.value.length))
+    // 如果按住 Cmd/Ctrl 点击高亮选区内的元素，直接唤醒打开编辑器！
+    if (!isInspecting.value && !(clickAction && selections.value.length) && !(isDirectOpen && isTargetInSelection))
       return
 
     event.preventDefault()
     event.stopPropagation()
 
-    if (!(event.target instanceof Element))
+    if (!(target instanceof Element))
       return
+
+    if (!isInspecting.value && isDirectOpen && isTargetInSelection) {
+      await openActiveSelectionInEditor()
+      return
+    }
 
     if (clickAction === 'add') {
       await addSelectionEntry({
-        element: event.target,
-        selection: createGrabSelection(event.target, clientOptions.framework, resolveSource(event.target)),
+        element: target,
+        selection: createGrabSelection(target, clientOptions.framework, resolveSource(target)),
       })
       return
     }
     if (clickAction === 'subtract') {
-      await removeSelectionEntry(event.target)
+      await removeSelectionEntry(target)
       return
     }
 
-    const nextSelection = createGrabSelection(event.target, clientOptions.framework, resolveSource(event.target))
-    setEntries([{ element: event.target, selection: nextSelection }])
+    const nextSelection = createGrabSelection(target, clientOptions.framework, resolveSource(target))
+    setEntries([{ element: target, selection: nextSelection }])
     isInspecting.value = false
+    isHoldInspecting.value = false
     clearHover()
     if (!nextSelection.filePath) {
       showFeedback('')
@@ -617,8 +510,32 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
       return
     }
     await copySelectionLocation()
-    if (clientOptions.openOnClick)
+    if (clientOptions.openOnClick || isDirectOpen)
       await openSelectionInEditor(nextSelection)
+  }
+
+  const onDblClick = async (event: MouseEvent) => {
+    const target = getEventTargetElement(event)
+    if (isDevtoolsElement(target) || !(target instanceof Element))
+      return
+
+    if (isInspecting.value) {
+      event.preventDefault()
+      event.stopPropagation()
+      const nextSelection = createGrabSelection(target, clientOptions.framework, resolveSource(target))
+      if (nextSelection.filePath)
+        await openSelectionInEditor(nextSelection)
+      return
+    }
+
+    if (selections.value.length > 0) {
+      const isTargetInSelection = selectedElements.value.some(el => el === target || composedContains(el, target))
+      if (isTargetInSelection) {
+        event.preventDefault()
+        event.stopPropagation()
+        await openActiveSelectionInEditor()
+      }
+    }
   }
 
   const startInspecting = () => {
@@ -628,6 +545,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   }
 
   const stopInspecting = () => {
+    isHoldInspecting.value = false
     isInspecting.value = false
     clearHover()
     dragStart.value = null
@@ -640,30 +558,138 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     clearNotices()
   }
 
-  const onKeyDown = (event: KeyboardEvent) => {
+  const selectHierarchyIndex = async (index: number) => {
+    const current = selections.value[0]
+    if (!current?.hierarchy || index < 0 || index >= current.hierarchy.length)
+      return
+
+    activeHierarchyIndex.value = index
+    const item = current.hierarchy[index]
+    const updatedSelection: GrabSelection = {
+      ...current,
+      componentName: item.componentName,
+      filePath: item.filePath,
+      line: item.line,
+      column: item.column,
+    }
+
+    const anchorElement = selectedElements.value[0]
+    const targetElements = anchorElement && item.componentName
+      ? getComponentRootElements(anchorElement, item.componentName)
+      : [anchorElement].filter((el): el is Element => Boolean(el))
+
+    const entries: SelectionEntry[] = targetElements.length > 0
+      ? targetElements.map(el => ({ element: el, selection: updatedSelection }))
+      : [{ element: anchorElement, selection: updatedSelection }]
+
+    setEntries(entries)
+    activeHierarchyIndex.value = index
+    if (item.filePath) {
+      await copySelectionLocation()
+      showFeedback(`Selected <${item.componentName}>`)
+    }
+    else {
+      showFeedback(`Selected <${item.componentName}> (no source)`)
+    }
+  }
+
+  const onKeyDown = async (event: KeyboardEvent) => {
     syncModifiers(event)
     const action = getInspectorShortcutAction(event)
     if (action === 'cancel' && isInspecting.value) {
       event.preventDefault()
+      isHoldInspecting.value = false
       stopInspecting()
+      return
     }
     else if (action === 'cancel' && selections.value.length) {
       event.preventDefault()
       clearSelection()
+      return
     }
     if (action === 'toggle') {
       event.preventDefault()
+      isHoldInspecting.value = false
       isInspecting.value ? stopInspecting() : startInspecting()
+      return
+    }
+
+    // Hold-to-inspect: pressing Alt outside editable target when not inspecting and no active selection
+    if (
+      (event.key === 'Alt' || event.code === 'AltLeft' || event.code === 'AltRight')
+      && !event.repeat
+      && !isInspecting.value
+      && selections.value.length === 0
+      && !isEditableTarget(event.target)
+    ) {
+      isHoldInspecting.value = true
+      startInspecting()
+      return
+    }
+
+    // Hierarchy navigation: ArrowUp / ArrowDown / Enter when a component hierarchy is active
+    if (
+      !isInspecting.value
+      && selections.value.length >= 1
+      && selections.value[0]?.hierarchy
+      && selections.value[0].hierarchy.length > 1
+      && !isEditableTarget(event.target)
+    ) {
+      if (event.key === 'ArrowUp' || event.code === 'ArrowUp') {
+        event.preventDefault()
+        const currentIdx = activeHierarchyIndex.value ?? (selections.value[0].hierarchy.length - 1)
+        if (currentIdx > 0)
+          await selectHierarchyIndex(currentIdx - 1)
+        return
+      }
+      if (event.key === 'ArrowDown' || event.code === 'ArrowDown') {
+        event.preventDefault()
+        const currentIdx = activeHierarchyIndex.value ?? (selections.value[0].hierarchy.length - 1)
+        if (currentIdx < selections.value[0].hierarchy.length - 1)
+          await selectHierarchyIndex(currentIdx + 1)
+        return
+      }
+      if (event.key === 'Enter' || event.code === 'Enter') {
+        event.preventDefault()
+        await openActiveSelectionInEditor()
+        return
+      }
     }
   }
 
-  const onKeyUp = (event: KeyboardEvent) => {
+  const onKeyUp = async (event: KeyboardEvent) => {
     syncModifiers(event)
+
+    if (
+      (event.key === 'Alt' || event.code === 'AltLeft' || event.code === 'AltRight')
+      && isHoldInspecting.value
+    ) {
+      isHoldInspecting.value = false
+      const element = hoveredElement.value
+      const currentHoverSelection = hoverSelection.value
+      if (element && currentHoverSelection) {
+        setEntries([{ element, selection: currentHoverSelection }])
+        isInspecting.value = false
+        clearHover()
+        if (currentHoverSelection.filePath) {
+          await copySelectionLocation()
+          if (clientOptions.openOnClick)
+            await openSelectionInEditor(currentHoverSelection)
+        }
+      }
+      else {
+        stopInspecting()
+      }
+    }
   }
 
   // 窗口失焦时修饰键状态不可信（如 Alt+Tab），直接复位
   const onWindowBlur = () => {
     pressedModifiers.value = { shift: false, alt: false }
+    if (isHoldInspecting.value) {
+      isHoldInspecting.value = false
+      stopInspecting()
+    }
   }
 
   const dispose = () => {
@@ -674,6 +700,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     window.removeEventListener('pointermove', onPointerMove, true)
     window.removeEventListener('pointerup', onPointerUp, true)
     window.removeEventListener('click', onClick, true)
+    window.removeEventListener('dblclick', onDblClick, true)
     window.removeEventListener('keydown', onKeyDown, true)
     window.removeEventListener('keyup', onKeyUp, true)
     window.removeEventListener('blur', onWindowBlur)
@@ -685,6 +712,7 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
   window.addEventListener('pointermove', onPointerMove, true)
   window.addEventListener('pointerup', onPointerUp, true)
   window.addEventListener('click', onClick, true)
+  window.addEventListener('dblclick', onDblClick, true)
   window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('keyup', onKeyUp, true)
   window.addEventListener('blur', onWindowBlur)
@@ -695,8 +723,10 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     onUnmounted(dispose)
 
   return {
+    activeHierarchyIndex,
     activeSelection,
     hoveredElement,
+    isHoldInspecting,
     isInspecting,
     isMarqueeing,
     labelStyle,
@@ -713,8 +743,10 @@ export const useInspector = (clientOptions: ClientInspectDevtoolsOptions, { onIn
     openSelectionInEditor,
     openActiveSelectionInEditor,
     overlayStyles,
+    selectHierarchyIndex,
     selection,
     selections,
+    selectionCount,
     sourceLabel,
     startInspecting,
     stopInspecting,

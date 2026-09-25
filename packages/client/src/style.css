@@ -178,6 +178,7 @@
 }
 
 .dock-button:focus-visible,
+.breadcrumb-item:focus-visible,
 .source-badge:focus-visible {
   box-shadow: 0 0 0 2px rgba(var(--inspect-context), 0.5);
 }
@@ -263,16 +264,90 @@
   background: rgba(var(--inspect-context), 0.06);
 }
 
-.source-badge {
+.source-badge-container {
   position: fixed;
   z-index: var(--inspect-z-badge);
   top: 0;
   left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.source-badge-container > * {
+  pointer-events: auto;
+}
+
+.hierarchy-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(420px, calc(100vw - 16px));
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 3px 6px;
+  background: var(--inspect-dock-bg);
+  border: 1px solid var(--inspect-dock-line);
+  border-radius: 6px;
+  box-shadow: var(--inspect-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hierarchy-breadcrumb::-webkit-scrollbar {
   display: none;
+}
+
+.breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--inspect-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 2px 4px;
+  white-space: nowrap;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.breadcrumb-item:hover {
+  background: rgba(var(--inspect-context), 0.1);
+  color: var(--inspect-text);
+}
+
+.breadcrumb-item--active {
+  background: rgba(var(--inspect-context), 0.16);
+  color: var(--inspect-brand);
+  font-weight: 700;
+}
+
+.breadcrumb-item__name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item__sep {
+  opacity: 0.45;
+  font-size: 10px;
+  margin-left: 2px;
+  color: var(--inspect-muted);
+}
+
+.source-badge {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   max-width: min(360px, calc(100vw - 16px));
   min-height: 36px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--inspect-primary);
   box-shadow: 0 10px 26px rgba(4, 120, 87, 0.28);
   color: #fff;

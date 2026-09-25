@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { createGrabSelection, getReactDebugSource, getVueInspectorSource } from '../src/browser'
+import {
+  collectAllElements,
+  createGrabSelection,
+  getEventTargetElement,
+  getReactDebugSource,
+  getReactHierarchy,
+  getVueHierarchy,
+  getVueInspectorSource,
+} from '../src/browser'
 
 describe('createGrabSelection', () => {
   it('normalizes selected elements', () => {
@@ -28,6 +36,14 @@ describe('getReactDebugSource', () => {
       filePath: '/project/src/App.tsx',
       line: 8,
       column: 5,
+      hierarchy: [
+        {
+          componentName: 'App',
+          filePath: '/project/src/App.tsx',
+          line: 8,
+          column: 5,
+        },
+      ],
     })
   })
 
@@ -60,6 +76,14 @@ describe('getReactDebugSource', () => {
       filePath: '/src/main.tsx',
       line: 10,
       column: 5,
+      hierarchy: [
+        {
+          componentName: 'SaveButton',
+          filePath: '/src/main.tsx',
+          line: 10,
+          column: 5,
+        },
+      ],
     })
   })
 
@@ -93,6 +117,14 @@ describe('getReactDebugSource', () => {
       filePath: '/project/src/FeatureButton.tsx',
       line: 24,
       column: undefined,
+      hierarchy: [
+        {
+          componentName: 'FeatureButton',
+          filePath: '/project/src/FeatureButton.tsx',
+          line: 24,
+          column: undefined,
+        },
+      ],
     })
   })
 
@@ -116,7 +148,58 @@ describe('getReactDebugSource', () => {
       filePath: '/Users/dev/app/src/ActionButton.tsx',
       line: 12,
       column: 7,
+      hierarchy: [
+        {
+          componentName: 'ActionButton',
+          filePath: '/Users/dev/app/src/ActionButton.tsx',
+          line: 12,
+          column: 7,
+        },
+      ],
     })
+  })
+
+  it('extracts clean component hierarchy without duplicates for nested components', () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <section data-inspect-devtools-source="/project/src/main.tsx:12:1" data-inspect-devtools-component="HomePage">
+          <article data-inspect-devtools-source="/project/src/components/MetricCard.tsx:2:72" data-inspect-devtools-component="MetricCard">
+            <strong data-inspect-devtools-source="/project/src/components/MetricCard.tsx:2:151" data-inspect-devtools-component="MetricCard">18</strong>
+          </article>
+        </section>
+      </div>
+    `
+    const strong = document.querySelector('strong')!
+    const appFiber = {
+      elementType: { name: 'App' },
+      type: { name: 'App' },
+      _debugSource: { fileName: '/project/src/main.tsx', lineNumber: 24 },
+      return: null,
+    }
+    const homePageFiber = {
+      elementType: { name: 'HomePage' },
+      type: { name: 'HomePage' },
+      _debugSource: { fileName: '/project/src/main.tsx', lineNumber: 12 },
+      return: appFiber,
+    }
+    const metricCardFiber = {
+      elementType: { name: 'MetricCard' },
+      type: { name: 'MetricCard' },
+      _debugSource: { fileName: '/project/src/main.tsx', lineNumber: 13 },
+      return: homePageFiber,
+    }
+    const hostFiber = {
+      elementType: 'strong',
+      type: 'strong',
+      _debugSource: { fileName: '/project/src/components/MetricCard.tsx', lineNumber: 2 },
+      return: metricCardFiber,
+    }
+
+    Object.defineProperty(strong, '__reactFiber$test', { value: hostFiber })
+
+    const res = getReactDebugSource(strong)
+    expect(res.hierarchy?.map(item => item.componentName)).toEqual(['App', 'HomePage', 'MetricCard'])
+    expect(res.hierarchy?.length).toBe(3)
   })
 })
 
@@ -145,6 +228,39 @@ describe('getVueInspectorSource', () => {
       filePath: '/project/src/App.vue',
       line: 12,
       column: 7,
+      hierarchy: [
+        {
+          componentName: 'App',
+          filePath: '/project/src/App.vue',
+          line: 12,
+          column: 7,
+        },
+      ],
     })
+  })
+})
+
+describe('shadow DOM traversal and event target', () => {
+  it('collects elements inside shadowRoot', () => {
+    document.body.innerHTML = '<div id="host"></div>'
+    const host = document.getElementById('host')!
+    const shadow = host.attachShadow({ mode: 'open' })
+    shadow.innerHTML = '<button id="inner-btn"><span>Inside Shadow</span></button>'
+
+    const all = collectAllElements(document.body)
+    const tagNames = all.map(el => el.tagName.toLowerCase())
+    expect(tagNames).toContain('div')
+    expect(tagNames).toContain('button')
+    expect(tagNames).toContain('span')
+  })
+
+  it('resolves composedPath target for Shadow DOM events', () => {
+    const span = document.createElement('span')
+    const event = new MouseEvent('click')
+    Object.defineProperty(event, 'composedPath', {
+      value: () => [span, document.body],
+    })
+
+    expect(getEventTargetElement(event)).toBe(span)
   })
 })
