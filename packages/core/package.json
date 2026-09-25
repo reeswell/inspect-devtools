@@ -1,13 +1,25 @@
 {
   "name": "@inspect-devtools/core",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Core runtime for Inspect Devtools Vite plugins.",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
   "homepage": "https://github.com/reeswell/inspect-devtools#readme",
-  "bugs": { "url": "https://github.com/reeswell/inspect-devtools/issues" },
-  "keywords": ["vite", "devtools", "inspector", "source-location"],
-  "engines": { "node": ">=18" },
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "vite",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -19,8 +31,14 @@
       "import": "./dist/browser.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
     "test": "vitest run",

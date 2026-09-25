@@ -1,13 +1,26 @@
 {
   "name": "@inspect-devtools/vite-react",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Vite source inspector for React applications.",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
   "homepage": "https://github.com/reeswell/inspect-devtools#readme",
-  "bugs": { "url": "https://github.com/reeswell/inspect-devtools/issues" },
-  "keywords": ["vite", "react", "devtools", "inspector", "source-location"],
-  "engines": { "node": ">=18" },
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "vite",
+    "react",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -15,8 +28,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
     "test": "vitest run",

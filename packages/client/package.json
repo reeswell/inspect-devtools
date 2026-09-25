@@ -1,13 +1,25 @@
 {
   "name": "@inspect-devtools/client",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Browser client runtime for Inspect Devtools.",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/reeswell/inspect-devtools.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
   "homepage": "https://github.com/reeswell/inspect-devtools#readme",
-  "bugs": { "url": "https://github.com/reeswell/inspect-devtools/issues" },
-  "keywords": ["vite", "devtools", "inspector", "source-location"],
-  "engines": { "node": ">=18" },
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "vite",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
@@ -17,9 +29,17 @@
     },
     "./style.css": "./dist/style.css"
   },
-  "files": ["dist", "README.md", "LICENSE"],
-  "publishConfig": { "access": "public" },
-  "sideEffects": ["./dist/style.css"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "./dist/style.css"
+  ],
   "scripts": {
     "build": "vite build && vue-tsc -p tsconfig.json --emitDeclarationOnly",
     "dev": "vite --host 127.0.0.1",
