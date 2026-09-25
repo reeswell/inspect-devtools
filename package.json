@@ -10,7 +10,8 @@
     "typecheck": "turbo run typecheck",
     "play:react": "pnpm --filter @inspect-devtools/playground-react dev",
     "play:vue": "pnpm --filter @inspect-devtools/playground-vue dev",
-    "release:check": "pnpm test && pnpm typecheck && pnpm build"
+    "release:check": "pnpm test && pnpm typecheck && pnpm build",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",
