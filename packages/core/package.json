@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/core",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "Core runtime for Inspect Devtools Vite plugins.",
   "license": "MIT",
   "repository": {
