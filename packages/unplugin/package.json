@@ -1,0 +1,98 @@
+{
+  "name": "@inspect-devtools/unplugin",
+  "version": "1.0.0",
+  "description": "Unified unplugin for Inspect Devtools supporting Vite, Webpack, Rspack, Rollup, and Esbuild.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
+  "homepage": "https://github.com/reeswell/inspect-devtools#readme",
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "unplugin",
+    "vite",
+    "webpack",
+    "rspack",
+    "rollup",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.ts",
+      "import": "./dist/webpack.js"
+    },
+    "./rspack": {
+      "types": "./dist/rspack.d.ts",
+      "import": "./dist/rspack.js"
+    },
+    "./rollup": {
+      "types": "./dist/rollup.d.ts",
+      "import": "./dist/rollup.js"
+    },
+    "./esbuild": {
+      "types": "./dist/esbuild.d.ts",
+      "import": "./dist/esbuild.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@inspect-devtools/core": "workspace:*",
+    "@inspect-devtools/vite-react": "workspace:*",
+    "@inspect-devtools/vite-svelte": "workspace:*",
+    "unplugin": "^3.4.0"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
+    "webpack": "^5.0.0",
+    "@rspack/core": "^0.7.0 || ^1.0.0",
+    "rollup": "^3.0.0 || ^4.0.0",
+    "esbuild": "^0.20.0 || ^0.21.0 || ^0.24.0 || ^0.25.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    },
+    "@rspack/core": {
+      "optional": true
+    },
+    "rollup": {
+      "optional": true
+    },
+    "esbuild": {
+      "optional": true
+    }
+  }
+}

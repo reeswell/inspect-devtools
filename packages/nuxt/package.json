@@ -1,0 +1,63 @@
+{
+  "name": "@inspect-devtools/nuxt",
+  "version": "1.0.0",
+  "description": "Nuxt module for inspect-devtools.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
+  "homepage": "https://github.com/reeswell/inspect-devtools#readme",
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@inspect-devtools/client": "workspace:*",
+    "@inspect-devtools/core": "workspace:*",
+    "@inspect-devtools/vite-vue": "workspace:*"
+  },
+  "peerDependencies": {
+    "@nuxt/kit": "^3.0.0 || ^4.0.0",
+    "nuxt": "^3.0.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "nuxt": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@nuxt/kit": "^3.15.0",
+    "@nuxt/schema": "^3.21.11"
+  }
+}

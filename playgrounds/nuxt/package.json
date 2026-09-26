@@ -1,0 +1,22 @@
+{
+  "name": "@inspect-devtools/playground-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 5181",
+    "postinstall": "nuxt prepare",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "nuxt prepare && vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@inspect-devtools/nuxt": "workspace:*",
+    "nuxt": "^3.15.0",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.1.5"
+  }
+}

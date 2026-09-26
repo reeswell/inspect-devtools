@@ -118,7 +118,9 @@ export const registerInspectDevtoolsServer = ({ server, root, options }: ServerR
           throw new Error('Missing path')
         const file = resolveProjectFile(body.path, root, options.allowedDirs)
         const suffix = body.line ? `:${body.line}${body.column ? `:${body.column}` : ''}` : ''
-        launchEditor(`${file}${suffix}`, options.openInEditor)
+        launchEditor(`${file}${suffix}`, options.openInEditor, (_fileName, errorMessage) => {
+          console.error(`[inspect-devtools] Failed to launch editor: ${errorMessage}`)
+        })
         sendJson(response, 200, { ok: true })
         return
       }

@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/client",
-  "version": "0.10.0",
+  "version": "1.0.0",
   "description": "Browser client runtime for Inspect Devtools.",
   "license": "MIT",
   "repository": {
@@ -22,12 +22,17 @@
   },
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./dist/entry.d.ts",
+      "import": "./dist/entry.js"
+    },
     "./package.json": "./package.json",
     "./entry": {
       "types": "./dist/entry.d.ts",
       "import": "./dist/entry.js"
     },
-    "./style.css": "./dist/style.css"
+    "./style.css": "./dist/style.css",
+    "./dist/style.css": "./dist/style.css"
   },
   "files": [
     "dist",

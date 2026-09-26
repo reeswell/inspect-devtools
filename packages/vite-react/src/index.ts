@@ -5,6 +5,7 @@ import { createInspectDevtoolsPlugin, type InspectDevtoolsOptions } from '@inspe
 import { transformReactInspectorSource } from './source-transform.ts'
 
 export type { InspectDevtoolsOptions }
+export { transformReactInspectorSource } from './source-transform.ts'
 
 const require = createRequire(import.meta.url)
 

@@ -1,6 +1,9 @@
 import type { InspectDevtoolsFramework, GrabSelection, ComponentHierarchyItem, ComponentAIContextSnapshot } from './types.ts'
 
 export type { GrabSelection, ComponentHierarchyItem, ComponentAIContextSnapshot }
+export * from './options.ts'
+export * from './protocol.ts'
+export * from './types.ts'
 export {
   createAIContextSnapshot,
   formatAIContextMarkdown,
@@ -588,6 +591,90 @@ export const getVueInspectorSource = (element: Element): Partial<GrabSelection> 
     column: Number(column) || undefined,
     hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
   }
+}
+
+export const getSvelteHierarchy = (element: Element): ComponentHierarchyItem[] => {
+  const items: ComponentHierarchyItem[] = []
+  const seenNames = new Set<string>()
+  let current: Element | null = element
+
+  while (current) {
+    const svelteMeta = (current as unknown as Record<string, unknown>).__svelte_meta as { loc?: { file: string, line: number, column: number } } | undefined
+    const componentName = current.getAttribute('data-inspect-devtools-component')
+      || (svelteMeta?.loc?.file ? svelteMeta.loc.file.split('/').pop()?.replace(/\.\w+$/, '') : undefined)
+
+    if (componentName && !seenNames.has(componentName)) {
+      seenNames.add(componentName)
+      let filePath: string | undefined
+      let line: number | undefined
+      let column: number | undefined
+
+      if (svelteMeta?.loc) {
+        filePath = normalizeSourcePath(svelteMeta.loc.file)
+        line = svelteMeta.loc.line
+        column = svelteMeta.loc.column
+      }
+      else {
+        const sourceAttr = current.getAttribute('data-inspect-devtools-source')
+        if (sourceAttr) {
+          const match = sourceAttr.match(VUE_INSPECTOR_RE)
+          if (match) {
+            filePath = normalizeSourcePath(match[1])
+            line = Number(match[2]) || undefined
+            column = Number(match[3]) || undefined
+          }
+        }
+      }
+
+      items.unshift({
+        componentName,
+        filePath,
+        line,
+        column,
+      })
+    }
+    current = current.parentElement
+  }
+
+  return items
+}
+
+export const getSvelteSource = (element: Element): Partial<GrabSelection> => {
+  const hierarchy = getSvelteHierarchy(element)
+  let current: Element | null = element
+
+  while (current) {
+    const svelteMeta = (current as unknown as Record<string, unknown>).__svelte_meta as { loc?: { file: string, line: number, column: number } } | undefined
+    if (svelteMeta?.loc) {
+      const baseName = svelteMeta.loc.file.split('/').pop()?.replace(/\.\w+$/, '')
+      return {
+        filePath: normalizeSourcePath(svelteMeta.loc.file),
+        line: svelteMeta.loc.line,
+        column: svelteMeta.loc.column,
+        componentName: baseName,
+        hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
+      }
+    }
+
+    const sourceAttr = current.getAttribute('data-inspect-devtools-source')
+    if (sourceAttr) {
+      const match = sourceAttr.match(VUE_INSPECTOR_RE)
+      if (match) {
+        const [, filePath, line, column] = match
+        const componentName = current.getAttribute('data-inspect-devtools-component') || undefined
+        return {
+          filePath: normalizeSourcePath(filePath),
+          line: Number(line) || undefined,
+          column: Number(column) || undefined,
+          componentName,
+          hierarchy: hierarchy.length > 0 ? hierarchy : undefined,
+        }
+      }
+    }
+    current = current.parentElement
+  }
+
+  return hierarchy.length > 0 ? { hierarchy } : {}
 }
 
 export const getComponentRootElements = (element: Element, componentName: string): Element[] => {

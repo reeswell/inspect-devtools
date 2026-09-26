@@ -1,0 +1,116 @@
+body {
+  margin: 0;
+  background: #f7f9fa;
+  color: #171717;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.playground-shell {
+  min-height: 100vh;
+}
+
+.page-shell {
+  display: grid;
+  gap: 28px;
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 56px 40px 96px;
+}
+
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid #e5e7eb; }
+.brand { color: #171717; font-weight: 800; text-decoration: none; }
+.app-nav { display: flex; gap: 8px; }
+.app-nav a { border-radius: 5px; color: #4b5563; font-size: 14px; padding: 7px 9px; text-decoration: none; }
+.app-nav a.active, .app-nav a:hover { background: #e5e7eb; color: #111827; }
+
+.hero-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  padding: 32px;
+}
+
+.hero-panel h1,
+.hero-panel p {
+  margin: 0;
+}
+
+.hero-panel p {
+  color: #0070f3;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lede { color: #4b5563; font-size: 17px; line-height: 1.55; max-width: 58ch; }
+.primary-action, .page-heading button, .form-actions button { width: max-content; border: 0; border-radius: 6px; background: #000; color: white; font: inherit; font-weight: 800; padding: 12px 16px; text-decoration: none; cursor: pointer; }
+
+.hero-panel h1 {
+  font-size: 40px;
+  letter-spacing: -0.03em;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  padding: 20px 22px;
+}
+
+.metric-card span {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.metric-card strong {
+  font-size: 30px;
+}
+
+.metric-card-green { border-top: 5px solid #10b981; }
+.metric-card-blue { border-top: 5px solid #0070f3; }
+.metric-card-amber { border-top: 5px solid #f59e0b; }
+
+.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.page-heading p, .page-heading h1, .content-panel h2, .help-panel h2 { margin: 0; }
+.page-heading p { color: #0070f3; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+.page-heading h1 { font-size: 36px; margin-top: 8px; }
+.content-grid, .settings-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 16px; }
+.content-panel, .help-panel { border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 22px; }
+.content-panel h2, .help-panel h2 { font-size: 16px; }
+.status-copy, .help-panel p { color: #4b5563; line-height: 1.55; }
+.content-panel a { color: #0070f3; font-weight: 700; }
+.activity-feed { display: grid; gap: 16px; list-style: none; margin: 20px 0 0; padding: 0; }
+.activity-item { display: grid; grid-template-columns: 10px 1fr; gap: 10px; color: #1f2937; font-size: 14px; }
+.activity-item time { color: #9ca3af; display: block; font-size: 12px; margin-top: 3px; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; background: #0070f3; margin-top: 5px; }
+.settings-form { display: grid; gap: 18px; margin-top: 20px; }
+.settings-form label { display: grid; gap: 7px; color: #1f2937; font-size: 14px; font-weight: 700; }
+.settings-form input:not([type="checkbox"]), .settings-form select { border: 1px solid #d1d5db; border-radius: 5px; background: #fff; color: #111827; font: inherit; padding: 9px 10px; }
+.settings-form .switch-row { align-items: center; grid-template-columns: 1fr auto; }
+.form-actions { align-items: center; display: flex; gap: 12px; }
+.form-actions span { color: #10b981; font-size: 14px; font-weight: 700; }
+
+@media (max-width: 680px) {
+  .app-header { align-items: flex-start; flex-direction: column; gap: 12px; padding: 16px 20px; }
+  .page-shell { padding: 36px 20px 84px; }
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+  .content-grid, .settings-layout { grid-template-columns: 1fr; }
+  .page-heading { align-items: flex-start; flex-direction: column; }
+}

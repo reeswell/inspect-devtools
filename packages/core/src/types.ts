@@ -1,4 +1,4 @@
-export type InspectDevtoolsFramework = 'react' | 'vue'
+export type InspectDevtoolsFramework = 'react' | 'vue' | 'svelte'
 // 'mention' 是 @ 引用（Cursor、Claude Code 等可解析）；'link' 是标准 Markdown 链接，面向非 AI 的粘贴目的地
 export type CopyFormat = 'mention' | 'link'
 export type CopyLineColumn = boolean | 'line' | 'column'

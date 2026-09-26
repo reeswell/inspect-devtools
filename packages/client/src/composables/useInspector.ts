@@ -6,6 +6,7 @@ import {
   getComponentRootElements,
   getEventTargetElement,
   getReactDebugSource,
+  getSvelteSource,
   getVueInspectorSource,
 } from '@inspect-devtools/core/browser'
 import { formatRouteLocation, formatSelectionLocation } from './selection-location'
@@ -200,6 +201,8 @@ export const useInspector = (
   const resolveSource = (element: Element) => {
     if (clientOptions.framework === 'react')
       return getReactDebugSource(element)
+    if (clientOptions.framework === 'svelte')
+      return getSvelteSource(element)
     return getVueInspectorSource(element)
   }
 

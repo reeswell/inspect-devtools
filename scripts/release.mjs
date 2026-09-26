@@ -8,6 +8,10 @@ const PACKAGES = [
   'packages/client',
   'packages/vite-react',
   'packages/vite-vue',
+  'packages/vite-svelte',
+  'packages/next',
+  'packages/nuxt',
+  'packages/unplugin',
 ]
 
 const PUBLISH_PACKAGES = [
@@ -15,6 +19,10 @@ const PUBLISH_PACKAGES = [
   '@inspect-devtools/client',
   '@inspect-devtools/vite-react',
   '@inspect-devtools/vite-vue',
+  '@inspect-devtools/vite-svelte',
+  '@inspect-devtools/next',
+  '@inspect-devtools/nuxt',
+  '@inspect-devtools/unplugin',
 ]
 
 const log = {

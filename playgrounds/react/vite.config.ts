@@ -3,5 +3,5 @@ import { defineConfig } from 'vite'
 import { inspectDevtoolsReact } from '@inspect-devtools/vite-react'
 
 export default defineConfig({
-  plugins: [react(), ...inspectDevtoolsReact({ openInEditor: 'code', copyLineColumn: true })],
+  plugins: [react(), ...inspectDevtoolsReact({ copyLineColumn: true })],
 })

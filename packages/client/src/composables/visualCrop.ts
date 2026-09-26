@@ -15,6 +15,30 @@ export const findCommonAncestor = (elements: Element[]): HTMLElement | null => {
   return document.body
 }
 
+export const getEffectiveBackgroundColor = (element: Element): string => {
+  if (typeof window === 'undefined')
+    return '#ffffff'
+
+  let current: Element | null = element
+  while (current && current !== document.documentElement) {
+    const bg = window.getComputedStyle(current).backgroundColor
+    if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+      return bg
+    }
+    current = current.parentElement
+  }
+
+  const bodyBg = document.body ? window.getComputedStyle(document.body).backgroundColor : ''
+  if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)')
+    return bodyBg
+
+  const htmlBg = document.documentElement ? window.getComputedStyle(document.documentElement).backgroundColor : ''
+  if (htmlBg && htmlBg !== 'transparent' && htmlBg !== 'rgba(0, 0, 0, 0)')
+    return htmlBg
+
+  return '#ffffff'
+}
+
 export const captureElementToBlob = async (
   target: Element | Element[],
 ): Promise<Blob | null> => {
@@ -33,8 +57,11 @@ export const captureElementToBlob = async (
     if (!node)
       return null
 
+    const backgroundColor = getEffectiveBackgroundColor(node)
+
     const rawBlob = await toBlob(node, {
       cacheBust: true,
+      backgroundColor,
       filter: (child: Node) => {
         if (child instanceof Element && child.hasAttribute('data-inspect-devtools'))
           return false

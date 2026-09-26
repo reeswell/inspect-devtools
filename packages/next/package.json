@@ -1,0 +1,76 @@
+{
+  "name": "@inspect-devtools/next",
+  "version": "1.0.0",
+  "description": "Next.js integration for inspect-devtools.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reeswell/inspect-devtools.git"
+  },
+  "homepage": "https://github.com/reeswell/inspect-devtools#readme",
+  "bugs": {
+    "url": "https://github.com/reeswell/inspect-devtools/issues"
+  },
+  "keywords": [
+    "next",
+    "nextjs",
+    "react",
+    "devtools",
+    "inspector",
+    "source-location"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./loader": {
+      "types": "./dist/loader.d.ts",
+      "import": "./dist/loader.js",
+      "require": "./dist/loader.js",
+      "default": "./dist/loader.js"
+    },
+    "./component": {
+      "types": "./dist/component.d.ts",
+      "import": "./dist/component.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@inspect-devtools/client": "workspace:*",
+    "@inspect-devtools/core": "workspace:*",
+    "@inspect-devtools/vite-react": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=13.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17"
+  }
+}

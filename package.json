@@ -10,6 +10,9 @@
     "typecheck": "turbo run typecheck",
     "play:react": "pnpm --filter @inspect-devtools/playground-react dev",
     "play:vue": "pnpm --filter @inspect-devtools/playground-vue dev",
+    "play:svelte": "pnpm --filter @inspect-devtools/playground-svelte dev",
+    "play:next": "pnpm --filter @inspect-devtools/playground-next dev",
+    "play:nuxt": "pnpm --filter @inspect-devtools/playground-nuxt dev",
     "release:check": "pnpm test && pnpm typecheck && pnpm build",
     "release": "node scripts/release.mjs"
   },
