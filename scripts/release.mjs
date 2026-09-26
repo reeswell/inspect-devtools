@@ -135,7 +135,10 @@ async function main() {
   // 5. Git 提交并打标签
   log.step('4/6', '创建 Git Commit 与 Tag...')
   run('git add -A')
-  run(`git commit -m "chore(release): v${targetVersion}"`)
+  try {
+    run(`git commit -m "chore(release): v${targetVersion}"`)
+  }
+  catch {}
   run(`git tag v${targetVersion}`)
 
   // 6. 推送到 GitHub
