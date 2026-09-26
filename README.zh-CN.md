@@ -2,31 +2,95 @@
 
 [English](./README.md)
 
-Inspect Devtools 是一个 Vite 开发期插件，用于从浏览器中定位 React 或 Vue 渲染元素对应的源码。选中元素后，工具会复制源码文件引用，并在编辑器中打开对应文件。
+Inspect Devtools 是一个现代化前端开发期审查与源码定位工具。在浏览器中直观选中任意页面元素，工具即可自动定位并高亮对应组件，一键在本地编辑器中定位到文件与行列号，并支持生成**结构化 AI 提示词上下文**与**智能组件截图**。
 
-它适合本地调试，也适合把源码文件引用交给同事、写入 issue，或粘贴给编码助手。
+专为日常开发调试、代码审查、问题汇报，以及与 **Cursor / Claude Code / GitHub Copilot** 等 AI 编程助手高效协同而设计。
 
 ![Inspect Devtools 使用流程](./docs/inspect-workflow.png)
 
-## 环境要求
+---
 
-- Vite `6`、`7` 或 `8`
-- 运行在 Vite serve 模式下的 React 或 Vue 应用
-- 系统环境可被 [`launch-editor`](https://github.com/vitejs/launch-editor) 识别的本地编辑器，或显式配置编辑器命令
+## ✨ 核心特性
 
-## 安装
+- 🚀 **全主流框架支持**：深度集成 **Next.js、Nuxt 3、React、Vue 3、Svelte**。
+- 📦 **全打包器通用**：内置基于 Unplugin 的适配层，支持 **Vite、Webpack、Rollup、Esbuild、Rspack**。
+- 🤖 **AI 富上下文快照**：一键生成标准 `@file:line:col`、组件层级拓扑树 `Hierarchy: App > DashboardPage` 与当前路由 `Route: /dashboard`，助 AI 精准理解界面位置。
+- 📸 **智能组件截图（Visual Crop）**：一键截取组件图片至剪贴板，自动递归继承页面真实环境底色，杜绝透底黑图，直推给多模态 AI。
+- 🧭 **组件层级面包屑（Breadcrumbs）**：浮动悬浮条支持交互式向上溯源父级组件，支持一键点击跨级跳转。
+- 🎨 **Photoshop 级选区体验**：支持矩形框选、`Shift+点击/拖拽`加选、`Alt+点击/拖拽`减选、选区常驻预览。
+- 💻 **编辑器智能调起**：支持自动探测本地运行的 **VS Code、Cursor、WebStorm**，亦支持通过 URL Scheme 协议直连唤起。
+
+---
+
+## 📦 安装与配置
+
+根据您的技术栈选择对应的适配包：
+
+### 1. Next.js
+
+```bash
+pnpm add -D @inspect-devtools/next
+```
+
+在 `next.config.mjs` 中包装配置：
+
+```js
+// next.config.mjs
+import { withInspectDevtools } from '@inspect-devtools/next'
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+export default withInspectDevtools(nextConfig)
+```
+
+在根布局（如 `app/layout.tsx`）中引入客户端组件：
+
+```tsx
+// app/layout.tsx
+import { InspectDevtools } from '@inspect-devtools/next/component'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <InspectDevtools />
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+---
+
+### 2. Nuxt 3
+
+```bash
+pnpm add -D @inspect-devtools/nuxt
+```
+
+在 `nuxt.config.ts` 中注册模块：
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['@inspect-devtools/nuxt'],
+  inspectDevtools: {
+    openOnClick: true, // 可选：单选组件时直接在编辑器打开
+  },
+})
+```
+
+---
+
+### 3. Vite + React
 
 ```bash
 pnpm add -D @inspect-devtools/vite-react
-# 或
-pnpm add -D @inspect-devtools/vite-vue
 ```
 
-## 配置 Vite
-
-### React
-
-将 Inspect Devtools 放在 React 插件之后。
+在 `vite.config.ts` 中配置插件：
 
 ```ts
 // vite.config.ts
@@ -39,9 +103,15 @@ export default defineConfig({
 })
 ```
 
-### Vue
+---
 
-将 Inspect Devtools 放在 Vue 插件之后。
+### 4. Vite + Vue 3
+
+```bash
+pnpm add -D @inspect-devtools/vite-vue
+```
+
+在 `vite.config.ts` 中配置插件：
 
 ```ts
 // vite.config.ts
@@ -54,143 +124,155 @@ export default defineConfig({
 })
 ```
 
-### 指定编辑器
+---
 
-默认使用当前环境可用的编辑器命令。若需要明确指定，可传入 `openInEditor`。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ openInEditor: 'code' }),
-]
-```
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-### 主题
-
-dock 与面板默认使用浅色主题。通过 `theme` 可将深色主题设为项目默认。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ theme: 'dark' }),
-]
-```
-
-dock 中也提供主题切换按钮，选择结果按项目保存在浏览器 `localStorage` 中，作为当前浏览器对 Vite 默认值的个人覆盖。
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-### 复制内容附带路由
-
-复制内容默认保持纯 `@` 引用，让 Cursor 等编码助手能直接识别文件。传入 `copyRoute: true` 后，复制内容会附加一行 `Route:`，包含当前页面的 pathname、search 与 hash（不含 origin），帮助 AI 判断所选元素位于哪个页面、是哪个复用组件的哪个实例，以及该去哪里复现问题。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ copyRoute: true }),
-]
-```
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-### 复制格式
-
-复制内容默认为 `@` 引用（`copyFormat: 'mention'`），编码助手可直接解析。传入 `copyFormat: 'link'` 则复制标准 Markdown 链接，如 `[App.vue](/绝对路径/App.vue)`——适合粘贴到文档、ticket 或聊天工具等非 AI 目的地。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ copyFormat: 'link' }),
-]
-```
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-### 复制内容附带行列号
-
-复制内容默认不携带行列号（`copyLineColumn: false`），以保持引用简洁。传入 `copyLineColumn: true`（或 `'column'`）可在复制路径后附加精确行列号（如 `@src/App.vue:15:3` 或 `[App.vue:15:3](/path/App.vue:15:3)`）。如仅需行号，可传入 `copyLineColumn: 'line'`（如 `@src/App.vue:15`）。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ copyLineColumn: true }),
-]
-```
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-### 点击后是否自动打开编辑器
-
-默认在选中单一元素后会自动拉起配置的本地编辑器（`openOnClick: true`）。若希望点击时仅复制源码引用而不打扰或抢占窗口焦点，可传入 `openOnClick: false`；在此模式下，如需打开编辑器，可随时点击悬浮在元素上方的源码标签胶囊手动打开。
-
-```ts
-plugins: [
-  react(),
-  ...inspectDevtoolsReact({ openOnClick: false }),
-]
-```
-
-`inspectDevtoolsVue` 同样支持该选项。
-
-## 使用流程
-
-1. 启动 Vite 开发服务器。
-2. 按 `Alt+Shift+I`，或点击底部 dock 中的准星按钮；按钮上的角标会显示当前已选数量。
-3. 悬停可预览源码标签；点击目标元素完成选中。拖拽框选可一次选中多个元素：每个命中元素都有独立高亮框，`@` 引用在复制时按源码文件去重（每行一个）。
-4. 仿 Photoshop 的加减选让你无需退出 Inspect 模式即可调整选择：`Shift+点击` 或 `Shift+拖拽` 加选元素，`Alt+点击`（macOS 为 `Option+点击`）或 `Alt+拖拽` 减选元素——点击高亮框内任意位置即可移除该框。悬浮时按住 `Shift` 或 `Alt` 会预演操作结果：即将选中的元素显示实线绿框，即将移除的条目罩上红框（`Alt+拖拽` 时选框也会变红）。每次变更都会把当前全部 `@` 引用重新复制到剪贴板。退出 Inspect 模式后选区仍然保留：只要高亮框还在页面上，按住 `Shift`/`Alt` 悬浮同样显示加减选预览，`Shift+点击` 和 `Alt+点击` 也能继续加减选（不带修饰键的悬浮和点击都不会被拦截）；按 `Escape` 清空整个选区。
-5. 当元素存在可用源码信息时，选中会自动复制源码文件引用；当启用 `openOnClick: true`（默认）且选择恰好解析到一个源码文件时，会在配置的编辑器中精确打开对应行列；若 `openOnClick: false` 或多文件选择，请通过源码标签按钮手动打开当前项。
-
-Copy 生成相对仓库根目录的 `@` 引用，如 `@playgrounds/vue/src/App.vue`（文件在仓库外时为 `@/绝对路径/App.vue`），Cursor、Claude Code 等编码助手都能识别。默认不附带行列信息，开启 `copyLineColumn: true` 后将携带行列；引用列表之前另起一行 `Route: /dashboard?tab=overview`，标明所选内容位于哪个页面；如需关闭见[复制内容附带路由](#复制内容附带路由)。粘贴到非 AI 工具时可用 `copyFormat: 'link'` 改为 Markdown 链接，见[复制格式](#复制格式)。
-
-反馈与错误以 dock 上方的瞬态 toast 呈现；当元素无法解析出源码文件时，会以 toast 明确提示，不会复制也不会打开编辑器。
-
-## 快捷键
-
-| 快捷键 | 操作 |
-| --- | --- |
-| `Alt+Shift+I` | 切换 Inspect 模式 |
-| Inspect 中 `Shift+点击` / `Shift+拖拽` | 加选元素 |
-| Inspect 中 `Alt+点击` / `Alt+拖拽`（macOS 为 `Option`） | 减选元素 |
-| Inspect 中按 `Escape` | 退出 Inspect 模式 |
-| 已选中时按 `Escape` | 清除选中状态 |
-
-当焦点位于 input、textarea、select 或可编辑元素时，工具不会拦截这些快捷键。
-
-## 源码定位方式
-
-- **React：** 转换后的开发元数据与 React Fiber 调试信息。
-- **Vue：** `vite-plugin-vue-inspector` 元数据。
-
-有些元素没有可解析的应用源码，例如浏览器生成节点、第三方输出或框架内部节点。此时不会自动复制，也不会自动打开编辑器。
-
-## 仅开发期运行
-
-Inspect Devtools 只会在 Vite 的 `serve` 模式注入，不会进入生产构建。
-
-## Playground
-
-仓库中提供 React 和 Vue 两个 playground，均包含 Home、Dashboard、Settings 三个 hash 路由，以及嵌套组件、导航、表单控件、状态变化和链接，方便验证选中行为。
+### 5. Vite + Svelte (Svelte 4/5)
 
 ```bash
+pnpm add -D @inspect-devtools/vite-svelte
+```
+
+在 `vite.config.ts` 中配置插件：
+
+```ts
+// vite.config.ts
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+import { inspectDevtoolsSvelte } from '@inspect-devtools/vite-svelte'
+
+export default defineConfig({
+  plugins: [svelte(), ...inspectDevtoolsSvelte()],
+})
+```
+
+---
+
+### 6. 通用打包器 (Webpack / Rollup / Rspack / Esbuild)
+
+```bash
+pnpm add -D @inspect-devtools/unplugin
+```
+
+以 Webpack 为例：
+
+```js
+// webpack.config.js
+const inspectDevtools = require('@inspect-devtools/unplugin/webpack')
+
+module.exports = {
+  plugins: [
+    inspectDevtools({ framework: 'react' }), // 或 'vue' / 'svelte'
+  ],
+}
+```
+
+---
+
+## ⚙️ 常用配置项
+
+所有包均支持统一的配置项接口：
+
+| 配置项 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `openOnClick` | `boolean` | `false` / 框架自定义 | 单击选中元素时是否直接在编辑器打开。若为 `false`，则点击悬浮徽章或双击时打开 |
+| `openInEditor` | `string` | 自动推导 | 指定编辑器 CLI 命令，例如 `'code'`（VS Code）、`'cursor'`、`'webstorm'` |
+| `editorProtocol` | `'auto' \| 'vscode' \| 'cursor' \| 'webstorm'` | `'auto'` | 编辑器唤起方式。`'auto'` 走本地开发服务 RPC；指定协议名称时通过系统 URL Scheme 直连唤起 |
+| `theme` | `'light' \| 'dark'` | `'light'` | 底部 Dock 与交互面板的默认主题模式 |
+| `copyRoute` | `boolean` | `false` | 复制普通引用时是否附加一行页面路由信息（如 `Route: /dashboard`） |
+| `copyLineColumn` | `boolean \| 'line' \| 'column'` | `false` | 复制普通引用时是否包含行号与列号（如 `@App.vue:15:3`） |
+| `copyFormat` | `'mention' \| 'link'` | `'mention'` | 源码引用格式：`'mention'` 为 `@path` 形式；`'link'` 为 Markdown 链接 `[name](path)` |
+
+---
+
+## ⌨️ 快捷键速查
+
+| 快捷键 | 作用 | 说明 |
+| :--- | :--- | :--- |
+| `Alt+Shift+I` | **开启 / 退出审查模式** | 全局切换组件高亮检查状态 |
+| `Cmd+Alt+C` / `Ctrl+Alt+C` | **复制 AI 富上下文快照** | 输出 `@file:line:col` + 层级面包屑 + 当前页面路由 |
+| `Cmd+Shift+C` / `Ctrl+Shift+C` | **复制组件精准截图** | 自动合成真实环境底色并复制 PNG 图片到剪贴板 |
+| `Shift + 点击/拖拽` | **加选元素** | 追加组件，支持框选多组件批量引用 |
+| `Alt + 点击/拖拽` | **减选元素** | 排除或剔除已选框内的组件 |
+| `Cmd/Ctrl + 点击` | **选区内快捷打开** | 选区常驻期间，按住修饰键点击选区内组件直接唤起编辑器 |
+| `Escape` | **退出 / 清空选区** | 退出审查模式或清除当前所有选区高亮框 |
+
+> 提示：当输入焦点落在 `input`、`textarea` 或可编辑元素内部时，快捷键会自动被忽略。
+
+---
+
+## 🤖 AI 富上下文快照格式
+
+按快捷键 `Cmd+Alt+C` 或点击悬浮徽章上的 **✨** 图标，剪贴板将获得如下专为 AI 编码助手设计的结构化上下文：
+
+```text
+@/Users/project/src/pages/HomePage.tsx:12:5
+Hierarchy: `App` > `HomePage` > `MetricCard`
+Route: /dashboard
+```
+
+直接粘贴给 Cursor、Claude Code、GitHub Copilot 等，模型即可瞬间理解具体组件在整棵视图树中的物理定位与运行时位置。
+
+---
+
+## 🎯 演练场（Playgrounds）
+
+仓库内置了 5 套涵盖不同框架的标准演练场，开箱即用：
+
+```bash
+# React 演练场 (Vite)
 pnpm play:react
+
+# Vue 3 演练场 (Vite)
 pnpm play:vue
+
+# Svelte 演练场 (Vite)
+pnpm play:svelte
+
+# Next.js 演练场 (App Router)
+pnpm play:next
+
+# Nuxt 3 演练场 (Vite + Nitro)
+pnpm play:nuxt
 ```
 
-在两个 playground 中均可访问 `#/`、`#/dashboard`、`#/settings`。
+---
 
-## 本地开发
+## 🏗️ 架构说明
+
+本仓库为 pnpm monorepo 结构：
+
+- [`@inspect-devtools/core`](./packages/core)：核心 AST 转换、DOM 节点溯源算法、RPC 协议与服务端解析引擎。
+- [`@inspect-devtools/client`](./packages/client)：前端浮动 Dock、高亮遮罩、截图渲染与交互控制器。
+- [`@inspect-devtools/vite-react`](./packages/vite-react)：React + Vite 适配器。
+- [`@inspect-devtools/vite-vue`](./packages/vite-vue)：Vue 3 + Vite 适配器。
+- [`@inspect-devtools/vite-svelte`](./packages/vite-svelte)：Svelte + Vite 适配器。
+- [`@inspect-devtools/next`](./packages/next)：Next.js 适配器（Webpack Loader + 客户端运行时组件）。
+- [`@inspect-devtools/nuxt`](./packages/nuxt)：Nuxt 3 专用模块。
+- [`@inspect-devtools/unplugin`](./packages/unplugin)：通用打包器（Vite/Webpack/Rollup/Esbuild/Rspack）抽象层。
+
+---
+
+## 🛠️ 本地开发与贡献
 
 ```bash
+# 安装依赖
+pnpm install
+
+# 运行全量测试
 pnpm test
+
+# 全量类型检查
 pnpm typecheck
+
+# 全包构建
 pnpm build
+
+# 一键全量流水线校验
+pnpm release:check
 ```
 
-## 当前范围
+---
 
-- 仅支持 React 与 Vue
-- 仅支持 Vite 开发服务器
-- 仅支持本地编辑器与剪贴板交接
-- 不包含生产环境运行时、AI 服务集成或远程源码定位
+## 📄 License
+
+[MIT](./LICENSE)
