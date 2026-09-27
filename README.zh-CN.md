@@ -6,7 +6,7 @@ Inspect Devtools 是一个现代化前端开发期审查与源码定位工具。
 
 专为日常开发调试、代码审查、问题汇报，以及与 **Cursor / Claude Code / GitHub Copilot** 等 AI 编程助手高效协同而设计。
 
-![Inspect Devtools 使用流程](./docs/inspect-workflow.png)
+![Inspect Devtools 使用流程](./docs/inspect-devtools.gif)
 
 ---
 

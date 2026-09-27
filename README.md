@@ -6,7 +6,7 @@ Inspect Devtools is a modern developer tool for inspecting frontend components a
 
 Designed for rapid debugging, code review, issue filing, and seamless collaboration with AI coding assistants like **Cursor, Claude Code, and GitHub Copilot**.
 
-![Inspect Devtools workflow](./docs/inspect-workflow.png)
+![Inspect Devtools workflow](./docs/inspect-devtools.gif)
 
 ---
 
