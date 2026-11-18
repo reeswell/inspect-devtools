@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/unplugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Unified unplugin for Inspect Devtools supporting Vite, Webpack, Rspack, Rollup, and Esbuild.",
   "license": "MIT",
   "repository": {
