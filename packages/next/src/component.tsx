@@ -24,6 +24,7 @@ export function InspectDevtools({ options }: InspectDevtoolsProps): null {
       copyRoute: resolved.copyRoute,
       copyFormat: resolved.copyFormat,
       copyLineColumn: resolved.copyLineColumn,
+      copyMentionPrefix: resolved.copyMentionPrefix,
       openOnClick: resolved.openOnClick,
       projectRoot: '',
       editorProtocol: resolved.editorProtocol,
