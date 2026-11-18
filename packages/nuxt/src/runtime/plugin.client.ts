@@ -15,6 +15,7 @@ export default (nuxtApp: any) => {
     copyRoute: config.copyRoute ?? false,
     copyFormat: config.copyFormat ?? 'mention',
     copyLineColumn: config.copyLineColumn ?? false,
+    copyMentionPrefix: config.copyMentionPrefix ?? '',
     openOnClick: config.openOnClick ?? false,
     projectRoot: config.projectRoot ?? '',
     editorProtocol: config.editorProtocol ?? 'auto',

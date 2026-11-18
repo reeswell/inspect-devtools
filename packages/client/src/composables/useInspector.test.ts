@@ -8,6 +8,7 @@ const createClientOptions = (overrides: Partial<ClientInspectDevtoolsOptions> = 
   copyRoute: true,
   copyFormat: 'mention',
   copyLineColumn: false,
+  copyMentionPrefix: '',
   openOnClick: true,
   projectRoot: '/project',
   endpoints: { openInEditor: '/open' },

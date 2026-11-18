@@ -91,6 +91,36 @@ describe('formatSelectionLocation', () => {
       }, 'mention', '/project', true)).toBe('@src/App.tsx:12')
     })
 
+    it('prefixes a project-relative mention and ignores extra @ and slashes', () => {
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'button',
+        filePath: '/project/src/App.vue',
+        line: 12,
+        column: 3,
+      }, 'mention', '/project', 'line', 'web/')).toBe('@web/src/App.vue:12')
+
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'button',
+        filePath: '/project/src/App.vue',
+      }, 'mention', '/project', false, '@web/')).toBe('@web/src/App.vue')
+
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'button',
+        filePath: '/project/src/App.vue',
+      }, 'mention', '/project', false, '/apps/web/')).toBe('@apps/web/src/App.vue')
+    })
+
+    it('does not prefix a file outside the project root', () => {
+      expect(formatSelectionLocation({
+        framework: 'react',
+        tagName: 'div',
+        filePath: '/other/lib/index.ts',
+      }, 'mention', '/project', false, 'web/')).toBe('@/other/lib/index.ts')
+    })
+
     it('omits line and column suffix when line is unavailable even if copyLineColumn is true', () => {
       expect(formatSelectionLocation({
         framework: 'react',
@@ -101,6 +131,14 @@ describe('formatSelectionLocation', () => {
   })
 
   describe('link format', () => {
+    it('ignores the mention prefix', () => {
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'button',
+        filePath: '/project/src/App.vue',
+      }, 'link', '/project', false, 'web/')).toBe('[App.vue](/project/src/App.vue)')
+    })
+
     it('formats a standard Markdown link without line and column numbers', () => {
       expect(formatSelectionLocation({
         framework: 'react',

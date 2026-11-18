@@ -298,7 +298,7 @@ export const useInspector = (
   const copySelectionLocation = async () => {
     const locations = [...new Set(
       selections.value
-        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn))
+        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn, clientOptions.copyMentionPrefix))
         .filter((location): location is string => Boolean(location)),
     )]
     if (!locations.length)
@@ -350,7 +350,7 @@ export const useInspector = (
     try {
       const active = activeSelection.value ?? selections.value[0]
       const sourceText = active?.filePath
-        ? formatSelectionLocation(active, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn || true)
+        ? formatSelectionLocation(active, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn || true, clientOptions.copyMentionPrefix)
         : undefined
 
       const blob = await captureElementToBlob(elements)

@@ -1,6 +1,15 @@
 #__inspect_devtools_container__ {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 2147483647;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  pointer-events: none;
   color-scheme: dark;
   font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -10,6 +19,7 @@
 }
 
 .inspect-devtools-root {
+  pointer-events: none;
   --inspect-line: #343946;
   --inspect-text: #f2f4f8;
   --inspect-muted: #9ba3b4;
@@ -50,6 +60,7 @@
 .bottom-dock {
   position: fixed;
   z-index: var(--inspect-z-dock);
+  pointer-events: auto;
   bottom: 18px;
   left: calc(50% - 19px);
   display: flex;

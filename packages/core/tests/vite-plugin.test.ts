@@ -41,6 +41,7 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('"copyRoute":false')
     expect(code).toContain('"copyFormat":"mention"')
     expect(code).toContain('"copyLineColumn":false')
+    expect(code).toContain('"copyMentionPrefix":""')
     expect(code).toContain('"openOnClick":false')
     expect(code).toContain('"projectRoot":"/project"')
   })
@@ -99,6 +100,20 @@ describe('createInspectDevtoolsPlugin', () => {
 
     const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
     expect(code).toContain('"copyLineColumn":true')
+  })
+
+  it('passes the copyMentionPrefix option to the client', async () => {
+    const plugin = createInspectDevtoolsPlugin({
+      framework: 'react',
+      clientEntry: '/packages/client/dist/entry.js',
+      clientStyle: '/packages/client/dist/style.css',
+      options: { copyMentionPrefix: '@web/' },
+    })
+
+    getHook(plugin.configResolved)({ base: '/', root: '/project' })
+
+    const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
+    expect(code).toContain('"copyMentionPrefix":"web"')
   })
 
   it('passes the openOnClick option to the client', async () => {

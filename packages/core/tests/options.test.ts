@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveInspectDevtoolsOptions } from '../src/options'
+import { normalizeCopyMentionPrefix, resolveInspectDevtoolsOptions } from '../src/options'
 
 describe('resolveInspectDevtoolsOptions', () => {
   it('defaults to the light theme', () => {
@@ -33,6 +33,13 @@ describe('resolveInspectDevtoolsOptions', () => {
     expect(resolveInspectDevtoolsOptions({ copyLineColumn: true }).copyLineColumn).toBe(true)
     expect(resolveInspectDevtoolsOptions({ copyLineColumn: 'line' }).copyLineColumn).toBe('line')
     expect(resolveInspectDevtoolsOptions({ copyLineColumn: 'column' }).copyLineColumn).toBe('column')
+  })
+
+  it('defaults copyMentionPrefix to an empty string and strips @ and surrounding slashes', () => {
+    expect(resolveInspectDevtoolsOptions().copyMentionPrefix).toBe('')
+    expect(resolveInspectDevtoolsOptions({ copyMentionPrefix: 'web/' }).copyMentionPrefix).toBe('web')
+    expect(normalizeCopyMentionPrefix('@apps/web/')).toBe('apps/web')
+    expect(normalizeCopyMentionPrefix('///')).toBe('')
   })
 
   it('defaults openOnClick to false and honors an explicit opt-in', () => {

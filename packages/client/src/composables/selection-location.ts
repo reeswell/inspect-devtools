@@ -1,6 +1,12 @@
 import type { CopyFormat, CopyLineColumn } from '@inspect-devtools/core'
 import type { GrabSelection } from '@inspect-devtools/core/browser'
 
+const normalizeCopyMentionPrefix = (prefix: string | undefined): string => {
+  if (!prefix)
+    return ''
+  return prefix.replace(/\\/g, '/').trim().replace(/^@+/, '').replace(/^\/+|\/+$/g, '')
+}
+
 const escapeLinkText = (value: string): string => value
   .replaceAll('[', '\\[')
   .replaceAll(']', '\\]')
@@ -26,6 +32,7 @@ export const formatSelectionLocation = (
   format: CopyFormat = 'mention',
   projectRoot?: string,
   copyLineColumn: CopyLineColumn = false,
+  copyMentionPrefix = '',
 ): string | undefined => {
   if (!selection.filePath)
     return undefined
@@ -39,10 +46,14 @@ export const formatSelectionLocation = (
   }
 
   const root = projectRoot?.replace(/\\/g, '/').replace(/\/+$/, '')
-  const relativePath = root && (filePath === root || filePath.startsWith(`${root}/`))
-    ? filePath.slice(root.length).replace(/^\/+/, '')
-    : filePath
-  return `@${relativePath}${suffix}`
+  let relativePath = filePath
+  let prefix = ''
+  if (root && (filePath === root || filePath.startsWith(`${root}/`))) {
+    relativePath = filePath.slice(root.length).replace(/^\/+/, '')
+    prefix = normalizeCopyMentionPrefix(copyMentionPrefix)
+  }
+  const mentionPath = prefix ? `${prefix}/${relativePath}` : relativePath
+  return `@${mentionPath}${suffix}`
 }
 
 // 只取 pathname + search + hash：框架无关（history/hash 路由均覆盖），origin 在本地开发中是恒定噪音。

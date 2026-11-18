@@ -181,6 +181,7 @@ module.exports = {
 | `copyRoute` | `boolean` | `false` | 复制普通引用时是否附加一行页面路由信息（如 `Route: /dashboard`） |
 | `copyLineColumn` | `boolean \| 'line' \| 'column'` | `false` | 复制普通引用时是否包含行号与列号（如 `@App.vue:15:3`） |
 | `copyFormat` | `'mention' \| 'link'` | `'mention'` | 源码引用格式：`'mention'` 为 `@path` 形式；`'link'` 为 Markdown 链接 `[name](path)` |
+| `copyMentionPrefix` | `string` | `''` | 普通 `@` 引用的路径前缀。开发服务在多文件夹工作区的某个子目录里启动时，用工作区文件夹名补上 Cursor 能识别的前缀。`copyMentionPrefix: 'web/'` 会把 `@src/App.vue` 复制成 `@web/src/App.vue`。Markdown 链接不加此前缀 |
 
 ---
 

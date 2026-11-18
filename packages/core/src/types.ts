@@ -13,6 +13,7 @@ export interface InspectDevtoolsOptions {
   copyRoute?: boolean
   copyFormat?: CopyFormat
   copyLineColumn?: CopyLineColumn
+  copyMentionPrefix?: string
   openOnClick?: boolean
 }
 
@@ -24,6 +25,7 @@ export interface ResolvedInspectDevtoolsOptions {
   copyRoute: boolean
   copyFormat: CopyFormat
   copyLineColumn: CopyLineColumn
+  copyMentionPrefix: string
   openOnClick: boolean
 }
 
@@ -33,6 +35,7 @@ export interface ClientInspectDevtoolsOptions {
   copyRoute: boolean
   copyFormat: CopyFormat
   copyLineColumn: CopyLineColumn
+  copyMentionPrefix: string
   openOnClick: boolean
   projectRoot: string
   editorProtocol: EditorProtocol

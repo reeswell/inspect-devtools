@@ -181,6 +181,7 @@ All packages share a consistent options interface:
 | `copyRoute` | `boolean` | `false` | Whether to append the current URL route (e.g. `Route: /dashboard`) when copying references |
 | `copyLineColumn` | `boolean \| 'line' \| 'column'` | `false` | Whether to include line and column numbers in standard reference copies (e.g. `@App.vue:15:3`) |
 | `copyFormat` | `'mention' \| 'link'` | `'mention'` | Source reference format: `'mention'` for `@path`; `'link'` for Markdown link `[name](path)` |
+| `copyMentionPrefix` | `string` | `''` | Path prefix added to ordinary `@` mentions, for a dev server started inside one folder of a multi-root workspace. `copyMentionPrefix: 'web/'` turns `@src/App.vue` into `@web/src/App.vue`. Markdown links are unchanged |
 
 ---
 
