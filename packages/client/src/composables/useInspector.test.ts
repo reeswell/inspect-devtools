@@ -11,6 +11,7 @@ const createClientOptions = (overrides: Partial<ClientInspectDevtoolsOptions> = 
   copyMentionPrefix: '',
   openOnClick: true,
   projectRoot: '/project',
+  sourceRoot: '/project',
   endpoints: { openInEditor: '/open' },
   ...overrides,
 })

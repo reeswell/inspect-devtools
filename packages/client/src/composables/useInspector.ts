@@ -298,7 +298,7 @@ export const useInspector = (
   const copySelectionLocation = async () => {
     const locations = [...new Set(
       selections.value
-        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn, clientOptions.copyMentionPrefix))
+        .map(item => formatSelectionLocation(item, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn, clientOptions.copyMentionPrefix, clientOptions.sourceRoot))
         .filter((location): location is string => Boolean(location)),
     )]
     if (!locations.length)
@@ -327,7 +327,11 @@ export const useInspector = (
 
     showError('')
     try {
-      const snapshot = createAIContextSnapshot(element, currentSelection)
+      const mention = formatSelectionLocation(currentSelection, 'mention', clientOptions.projectRoot, false, clientOptions.copyMentionPrefix, clientOptions.sourceRoot)
+      const snapshot = createAIContextSnapshot(element, {
+        ...currentSelection,
+        filePath: mention?.startsWith('@') ? mention.slice(1) : currentSelection.filePath,
+      })
       await copyAIContext(snapshot)
       showFeedback('Copied rich AI context')
     }
@@ -350,7 +354,7 @@ export const useInspector = (
     try {
       const active = activeSelection.value ?? selections.value[0]
       const sourceText = active?.filePath
-        ? formatSelectionLocation(active, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn || true, clientOptions.copyMentionPrefix)
+        ? formatSelectionLocation(active, clientOptions.copyFormat, clientOptions.projectRoot, clientOptions.copyLineColumn || true, clientOptions.copyMentionPrefix, clientOptions.sourceRoot)
         : undefined
 
       const blob = await captureElementToBlob(elements)

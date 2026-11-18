@@ -40,6 +40,7 @@ const inspectDevtoolsModule: NuxtModule<InspectDevtoolsOptions> = defineNuxtModu
     nuxt.options.runtimeConfig.public.inspectDevtools = {
       ...resolvedOptions,
       projectRoot: nuxt.options.rootDir || '',
+      sourceRoot: nuxt.options.rootDir || '',
     }
 
     nuxt.options.css = nuxt.options.css || []

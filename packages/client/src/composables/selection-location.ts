@@ -17,6 +17,42 @@ const escapeLinkDestination = (value: string): string => value
   .replaceAll('(', '\\(')
   .replaceAll(')', '\\)')
 
+const isAbsoluteFilePath = (filePath: string): boolean =>
+  filePath.startsWith('/') || /^[A-Za-z]:\//.test(filePath)
+
+// Vue inspector paths are relative to the Vite app root. `../` reaches sibling
+// packages in a monorepo and has to be resolved before it can match projectRoot.
+const resolveAgainstRoot = (filePath: string, root: string): string => {
+  const base = root.replace(/\\/g, '/').replace(/\/+$/, '').split('/')
+  for (const segment of filePath.split('/')) {
+    if (!segment || segment === '.')
+      continue
+    if (segment === '..') {
+      if (base.length > 1)
+        base.pop()
+      continue
+    }
+    base.push(segment)
+  }
+  const resolved = base.join('/')
+  return resolved.startsWith('/') || /^[A-Za-z]:/.test(resolved) ? resolved : `/${resolved}`
+}
+
+export const resolveMentionFilePath = (
+  filePath: string,
+  projectRoot?: string,
+  sourceRoot?: string,
+): string => {
+  let normalized = filePath.replace(/\\/g, '/')
+  if (sourceRoot && !isAbsoluteFilePath(normalized) && normalized.split('/').includes('..'))
+    normalized = resolveAgainstRoot(normalized, sourceRoot)
+
+  const root = projectRoot?.replace(/\\/g, '/').replace(/\/+$/, '')
+  if (root && (normalized === root || normalized.startsWith(`${root}/`)))
+    return normalized.slice(root.length).replace(/^\/+/, '')
+  return normalized
+}
+
 const formatLocationSuffix = (selection: GrabSelection, copyLineColumn: CopyLineColumn): string => {
   if (!copyLineColumn || !selection.line)
     return ''
@@ -33,26 +69,25 @@ export const formatSelectionLocation = (
   projectRoot?: string,
   copyLineColumn: CopyLineColumn = false,
   copyMentionPrefix = '',
+  sourceRoot?: string,
 ): string | undefined => {
   if (!selection.filePath)
     return undefined
 
-  const filePath = selection.filePath.replace(/\\/g, '/')
+  const filePath = resolveMentionFilePath(selection.filePath, projectRoot, sourceRoot)
   const suffix = formatLocationSuffix(selection, copyLineColumn)
 
   if (format === 'link') {
-    const fileName = filePath.split('/').filter(Boolean).at(-1) || filePath
-    return `[${escapeLinkText(`${fileName}${suffix}`)}](${escapeLinkDestination(`${filePath}${suffix}`)})`
+    const absolutePath = resolveMentionFilePath(selection.filePath, undefined, sourceRoot)
+    const fileName = absolutePath.split('/').filter(Boolean).at(-1) || absolutePath
+    return `[${escapeLinkText(`${fileName}${suffix}`)}](${escapeLinkDestination(`${absolutePath}${suffix}`)})`
   }
 
+  const resolvedAbsolute = resolveMentionFilePath(selection.filePath, undefined, sourceRoot)
   const root = projectRoot?.replace(/\\/g, '/').replace(/\/+$/, '')
-  let relativePath = filePath
-  let prefix = ''
-  if (root && (filePath === root || filePath.startsWith(`${root}/`))) {
-    relativePath = filePath.slice(root.length).replace(/^\/+/, '')
-    prefix = normalizeCopyMentionPrefix(copyMentionPrefix)
-  }
-  const mentionPath = prefix ? `${prefix}/${relativePath}` : relativePath
+  const insideProject = Boolean(root && (resolvedAbsolute === root || resolvedAbsolute.startsWith(`${root}/`)))
+  const prefix = insideProject ? normalizeCopyMentionPrefix(copyMentionPrefix) : ''
+  const mentionPath = prefix ? `${prefix}/${filePath}` : filePath
   return `@${mentionPath}${suffix}`
 }
 

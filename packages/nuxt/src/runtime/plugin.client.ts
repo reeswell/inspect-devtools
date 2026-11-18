@@ -18,6 +18,7 @@ export default (nuxtApp: any) => {
     copyMentionPrefix: config.copyMentionPrefix ?? '',
     openOnClick: config.openOnClick ?? false,
     projectRoot: config.projectRoot ?? '',
+    sourceRoot: config.sourceRoot ?? '',
     editorProtocol: config.editorProtocol ?? 'auto',
     openInEditor: config.openInEditor,
     endpoints: clientEndpoints(baseURL),

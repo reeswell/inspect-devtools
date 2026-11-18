@@ -38,6 +38,7 @@ export interface ClientInspectDevtoolsOptions {
   copyMentionPrefix: string
   openOnClick: boolean
   projectRoot: string
+  sourceRoot: string
   editorProtocol: EditorProtocol
   openInEditor?: string
   endpoints: {

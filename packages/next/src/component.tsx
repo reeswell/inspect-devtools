@@ -27,6 +27,7 @@ export function InspectDevtools({ options }: InspectDevtoolsProps): null {
       copyMentionPrefix: resolved.copyMentionPrefix,
       openOnClick: resolved.openOnClick,
       projectRoot: '',
+      sourceRoot: '',
       editorProtocol: resolved.editorProtocol,
       openInEditor: resolved.openInEditor,
       endpoints: {

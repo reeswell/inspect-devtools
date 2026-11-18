@@ -44,6 +44,7 @@ describe('createInspectDevtoolsPlugin', () => {
     expect(code).toContain('"copyMentionPrefix":""')
     expect(code).toContain('"openOnClick":false')
     expect(code).toContain('"projectRoot":"/project"')
+    expect(code).toContain('"sourceRoot":"/project"')
   })
 
   it('passes the configured theme to the client', async () => {
@@ -147,6 +148,7 @@ describe('createInspectDevtoolsPlugin', () => {
 
       const code = String(await getHook(plugin.load)(RESOLVED_INSPECT_DEVTOOLS_CLIENT_ID))
       expect(code).toContain(`"projectRoot":${JSON.stringify(repoRoot)}`)
+      expect(code).toContain(`"sourceRoot":${JSON.stringify(appRoot)}`)
     }
     finally {
       await rm(repoRoot, { recursive: true, force: true })

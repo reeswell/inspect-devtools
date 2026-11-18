@@ -113,6 +113,33 @@ describe('formatSelectionLocation', () => {
       }, 'mention', '/project', false, '/apps/web/')).toBe('@apps/web/src/App.vue')
     })
 
+    it('resolves inspector paths that climb out of the Vite app into the repository', () => {
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'div',
+        filePath: '../../packages/effects/common-ui/src/components/list-query-bar/list-query-bar.vue',
+      }, 'mention', '/workspace/micro-app', false, '', '/workspace/micro-app/micro-admin/apps/web-antdv-next'))
+        .toBe('@micro-admin/packages/effects/common-ui/src/components/list-query-bar/list-query-bar.vue')
+    })
+
+    it('prefixes a resolved monorepo path', () => {
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'div',
+        filePath: '../../packages/effects/common-ui/src/components/list-query-bar/list-query-bar.vue',
+      }, 'mention', '/workspace/micro-app', false, 'micro-app/', '/workspace/micro-app/micro-admin/apps/web-antdv-next'))
+        .toBe('@micro-app/micro-admin/packages/effects/common-ui/src/components/list-query-bar/list-query-bar.vue')
+    })
+
+    it('leaves an app-relative path unchanged', () => {
+      expect(formatSelectionLocation({
+        framework: 'vue',
+        tagName: 'div',
+        filePath: 'src/App.vue',
+      }, 'mention', '/workspace/micro-app', false, 'micro-admin/', '/workspace/micro-app/micro-admin/apps/web-antdv-next'))
+        .toBe('@src/App.vue')
+    })
+
     it('does not prefix a file outside the project root', () => {
       expect(formatSelectionLocation({
         framework: 'react',
