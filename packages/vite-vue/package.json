@@ -1,6 +1,6 @@
 {
   "name": "@inspect-devtools/vite-vue",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Vite source inspector for Vue applications.",
   "license": "MIT",
   "repository": {
